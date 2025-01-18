@@ -108,10 +108,10 @@ typedef struct{
 #define NT_NIM_NUM_FIELDS  63       /* in the nifti_image struct        */
 #define NT_HDR_TIME_NFIELDS 8       /* num slice timing fields in hdr   */
 #define NT_NIM_TIME_NFIELDS 11      /* num slice timing fields in nim   */
-#define NT_DT_STRING      -0xfff    /* some strange number to abuse...  */
-#define NT_DT_POINTER     -0xfef    /* some strange number to abuse...  */
-#define NT_DT_CHAR_PTR    -0xfee    /* another...                       */
-#define NT_DT_EXT_PTR     -0xfed    /* and another...                   */
+#define NT_DT_STRING      (-0xfff)  /* some strange number to abuse...  */
+#define NT_DT_POINTER     (-0xfef)  /* some strange number to abuse...  */
+#define NT_DT_CHAR_PTR    (-0xfee)  /* another...                       */
+#define NT_DT_EXT_PTR     (-0xfed)  /* and another...                   */
 
 typedef struct {
    int  type;                    /* one of the DT_* types from nifti1.h */
@@ -142,7 +142,7 @@ typedef struct {
       dtype   * pd = dptr;                      \
       stype   * ps = sptr;                      \
       int64_t   index;                          \
-      for(index=0; index<nvals; index++) {      \
+      for(index=0; index<(nvals); index++) {    \
          *pd = (dtype)*ps;                      \
          pd++; ps++;                            \
       } } while(0)
@@ -158,7 +158,7 @@ typedef struct {
       int64_t   index;                          \
       /* init bounds with first */              \
       failure = 0;                              \
-      for(index=0; index<nvals; index++) {      \
+      for(index=0; index<(nvals); index++) {    \
          *pd = (dtype)*ps;                      \
          /* fail when we cannot invert */       \
          if( !failure && *ps != (stype)*pd )    \
