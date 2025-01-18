@@ -492,7 +492,7 @@ int main (int argc, const char *argv[])
   snprintf(buf,sizeof(buf),"nifti_datatype_string %d",constant);     \
   PrintTest(                                   \
             buf,                                        \
-            nifti_is_inttype(constant) != rval,         \
+            nifti_is_inttype(constant) != (rval),       \
             true,                            \
             &Errors);                                   \
   }
@@ -620,7 +620,7 @@ int main (int argc, const char *argv[])
   nifti_datatype_sizes(constant,&nbyper,&swapsize);             \
   PrintTest(                                           \
             buf,                                                \
-            nbyper != Nbyper || swapsize != Swapsize,           \
+            nbyper != (Nbyper) || swapsize != (Swapsize),           \
             true,                                    \
             &Errors);                                           \
   }

@@ -72,10 +72,10 @@ typedef struct{
 #define NT_HDR_NUM_FIELDS  43       /* in the nifti_1_header struct     */
 #define NT_ANA_NUM_FIELDS  47       /* in the  nifti_analyze75 struct   */
 #define NT_NIM_NUM_FIELDS  63       /* in the nifti_image struct        */
-#define NT_DT_STRING      -0xfff    /* some strange number to abuse...  */
-#define NT_DT_POINTER     -0xfef    /* some strange number to abuse...  */
-#define NT_DT_CHAR_PTR    -0xfee    /* another...                       */
-#define NT_DT_EXT_PTR     -0xfed    /* and another...                   */
+#define NT_DT_STRING      (-0xfff)  /* some strange number to abuse...  */
+#define NT_DT_POINTER     (-0xfef)  /* some strange number to abuse...  */
+#define NT_DT_CHAR_PTR    (-0xfee)  /* another...                       */
+#define NT_DT_EXT_PTR     (-0xfed)  /* and another...                   */
 
 typedef struct {
    int  type;                    /* one of the DT_* types from nifti1.h */
