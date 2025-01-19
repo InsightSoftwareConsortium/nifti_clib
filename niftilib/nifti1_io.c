@@ -4714,7 +4714,7 @@ static int nifti_read_next_extension( nifti1_extension * nex, nifti_image *nim,
    if( count != 2 ){
       if( g_opts.debug > 2 )
          fprintf(stderr,"-d current extension read failed\n");
-      znzseek(fp, -4*count, SEEK_CUR); /* back up past any read */
+      znzseek(fp, -4L*count, SEEK_CUR); /* back up past any read */
       return 0;                        /* no extension, no error condition */
    }
 
