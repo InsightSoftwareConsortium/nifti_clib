@@ -1008,7 +1008,7 @@ size_t FslReadSliceSeries(FSLIO *fslio, void *buffer, short slice, size_t nvols)
 
     if ((slice<0) || (slice>=z)) FSLIOERR("FslReadSliceSeries: slice outside valid range");
 
-    slbytes = x * y * (FslGetDataType(fslio, &type) / 8);
+    slbytes = (size_t)x * (size_t)y * (FslGetDataType(fslio, &type) / 8);
     volbytes = slbytes * z;
 
     orig_offset = znztell(fslio->fileptr);
@@ -1129,7 +1129,7 @@ size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, sho
     if ((zVox<0) || (zVox >=zdim)) FSLIOERR("FslReadTimeSeries: voxel outside valid range");
 
     wordsize = fslio->niftiptr->nbyper;
-    volbytes = xdim * ydim * zdim * wordsize;
+    volbytes = (size_t)xdim * (size_t)ydim * (size_t)zdim * wordsize;
 
     orig_offset = znztell(fslio->fileptr);
     offset = ((ydim * zVox + yVox) * xdim + xVox) * wordsize;
@@ -2352,16 +2352,16 @@ double ***d3matrix(int zh,  int yh, int xh)
 
 
         /** allocate pointers to slices */
-        t=(double ***) malloc((size_t)((nslice)*sizeof(double**)));
+        t=(double ***) malloc(nslice*sizeof(double**));
         if (!t) FSLIOERR("d3matrix: allocation failure");
 
         /** allocate pointers for ydim */
-        t[0]=(double **) malloc((size_t)((nslice*nrow)*sizeof(double*)));
+        t[0]=(double **) malloc(nslice*nrow*sizeof(double*));
         if (!t[0]) FSLIOERR("d3matrix: allocation failure");
 
 
         /** allocate the data blob */
-        t[0][0]=(double *) malloc((size_t)((nslice*nrow*ncol)*sizeof(double)));
+        t[0][0]=(double *) malloc(nslice*nrow*ncol*sizeof(double));
         if (!t[0][0]) FSLIOERR("d3matrix: allocation failure");
 
 
