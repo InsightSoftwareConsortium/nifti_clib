@@ -55,9 +55,11 @@ if(NOT FSLSTYLE)
   # If FSL_STYLE is not defined, then
   option( FSLSTYLE_NAME_CONFLICTS "FSL behavior for name conflicts (generate error if both img.nii and img.nii.gz exists)" OFF)
   option( FSLSTYLE_PIGZ_SUPPORT   "PIGZ: Use PIGZ parallel compression if environment includes AFNI_COMPRESSOR=PIGZ" OFF)
+  option( FSLSTYLE_REJECT_COMPLEX "REJECT_COMPLEX: Generate error if file is complex datatype." OFF)
 else()
   set(FSLSTYLE_NAME_CONFLICTS ON CACHE BOOL "FSL behavior for name conflicts (ambiguous files img.nii and img.nii.gz is an error)" FORCE)
   set(FSLSTYLE_PIGZ_SUPPORT   ON CACHE BOOL "PIGZ support" FORCE)
+  set(FSLSTYLE_REJECT_COMPLEX ON CACHE BOOL "Reject complex images." FORCE)
 endif()
 
 if(FSLSTYLE_NAME_CONFLICTS)
@@ -65,6 +67,9 @@ if(FSLSTYLE_NAME_CONFLICTS)
 endif()
 if(FSLSTYLE_PIGZ_SUPPORT)
   ADD_DEFINITIONS(-DPIGZ)
+endif()
+if(FSLSTYLE_REJECT_COMPLEX)
+  ADD_DEFINITIONS(-DREJECT_COMPLEX)
 endif()
 
 # Include executables as part of the build
