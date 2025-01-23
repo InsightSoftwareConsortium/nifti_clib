@@ -12,6 +12,7 @@ OUT_DATA=$(dirname ${DATA}) #Need to write to separate directory
 cd ${OUT_DATA}
 
 rm -f ${OUT_DATA}/f4.comment.nii
+rm -f ${OUT_DATA}/f4.to.clear.nii
 
 # add some comment and afni extensions, then display them
 if \
