@@ -9,6 +9,12 @@ CC		= gcc
 IFLAGS          = -I. -I../niftilib -I../znzlib
 CFLAGS          = -Wall -std=gnu99 -pedantic $(USEZLIB) $(IFLAGS)
 
+
+#run "FSLSTYLE=1 make" for JPEGLS build
+ifeq "$(FSLSTYLE)" "1"
+	CFLAGS += -DFSLSTYLE
+endif
+
 LLIBS 		= -lz -lm
 
 MISC_OBJS	= nifticdf.o znzlib.o

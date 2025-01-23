@@ -2802,7 +2802,23 @@ char * nifti_findhdrname(const char* fname)
 
    strcpy(hdrname,basename);
    strcat(hdrname,elist[efirst]);
+   #ifdef FSLSTYLE
+   if (nifti_fileexists(hdrname)) {
+      free(basename);
+      char *gzname = (char *)calloc(sizeof(char),strlen(hdrname)+8);
+      strcpy(gzname, hdrname);
+      strcat(gzname,extzip);
+      if (nifti_fileexists(gzname)) {
+         fprintf(stderr,"Image Exception : Multiple possible filenames detected for basename (*.nii, *.nii.gz): %s\n", basename);
+         free(gzname);
+         exit(134);
+      }
+      free(gzname);
+      return hdrname;
+   }
+   #else
    if (nifti_fileexists(hdrname)) { free(basename); return hdrname; }
+   #endif
 #ifdef HAVE_ZLIB
    strcat(hdrname,extzip);
    if (nifti_fileexists(hdrname)) { free(basename); return hdrname; }
@@ -5527,6 +5543,10 @@ struct nifti_1_header nifti_convert_nim2nhdr(const nifti_image * nim)
        nhdr.qoffset_z  = nim->qoffset_z ;
        nhdr.pixdim[0]  = (nim->qfac >= 0.0) ? 1.0F : -1.0F ;
      }
+     #ifdef FSLSTYLE
+     else //this helps for regression testing between this library and fsl, there is no other purpose. Without this you get false alarms
+       nhdr.pixdim[0]  = 1.0; //default if unknown and not needed
+     #endif
 
      if( nim->sform_code > 0 ){
        nhdr.sform_code = nim->sform_code ;

@@ -50,6 +50,18 @@ endif()
 # current build behavior
 option( BUILD_SHARED_LIBS "Toggle building shared libraries." OFF)
 
+# Add options to mimic FSL features,  Can manually specify -DFSLSTYLE:BOOL=ON for parity support with makefile
+if(NOT FSLSTYLE)
+  # If FSL_STYLE is not defined, then
+  option( FSLSTYLE_NAME_CONFLICTS "FSL behavior for name conflicts (generate error if both img.nii and img.nii.gz exists)" OFF)
+else()
+  set(FSLSTYLE_NAME_CONFLICTS ON CACHE BOOL "FSL behavior for name conflicts (ambiguous files img.nii and img.nii.gz is an error)" FORCE)
+endif()
+
+if(FSLSTYLE_NAME_CONFLICTS)
+  ADD_DEFINITIONS(-DFSLSTYLE)
+endif()
+
 # Include executables as part of the build
 option(NIFTI_BUILD_APPLICATIONS "Build various utility tools" ON)
 mark_as_advanced(NIFTI_BUILD_APPLICATIONS)

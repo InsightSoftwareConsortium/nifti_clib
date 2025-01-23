@@ -3740,7 +3740,23 @@ char * nifti_findhdrname(const char* fname)
 
    strcpy(hdrname,basename);
    strcat(hdrname,elist[efirst]);
+   #ifdef FSLSTYLE
+   if (nifti_fileexists(hdrname)) {
+      free(basename);
+      char *gzname = (char *)calloc(sizeof(char),strlen(hdrname)+8);
+      strcpy(gzname, hdrname);
+      strcat(gzname,extzip);
+      if (nifti_fileexists(gzname)) {
+         fprintf(stderr,"Image Exception : Multiple possible filenames detected for basename (*.nii, *.nii.gz): %s\n", basename);
+         free(gzname);
+         exit(134);
+      }
+      free(gzname);
+      return hdrname;
+   }
+   #else
    if (nifti_fileexists(hdrname)) { free(basename); return hdrname; }
+   #endif
 #ifdef HAVE_ZLIB
    strcat(hdrname,extzip);
    if (nifti_fileexists(hdrname)) { free(basename); return hdrname; }
@@ -5288,14 +5304,14 @@ nifti_1_header * nifti_read_n1_hdr(const char * hname, int *swapped, int check)
    hfile = nifti_findhdrname(hname);
    if( hfile == NULL ){
       if( g_opts.debug > 0 )
-         LNI_FERR(fname,"failed to find header file for", hname);
+         LNI_FERR(fname,"failed to find N1 header file for", hname);
       return NULL;
    } else if( g_opts.debug > 1 )
       fprintf(stderr,"-d %s: found header filename '%s'\n",fname,hfile);
 
    fp = znzopen( hfile, "rb", nifti_is_gzfile(hfile) );
    if( znz_isnull(fp) ){
-      if( g_opts.debug > 0 ) LNI_FERR(fname,"failed to open header file",hfile);
+      if( g_opts.debug > 0 ) LNI_FERR(fname,"failed to open N1 header file",hfile);
       free(hfile);
       return NULL;
    }
@@ -5389,7 +5405,7 @@ nifti_2_header * nifti_read_n2_hdr(const char * hname, int * swapped,
    hfile = nifti_findhdrname(hname);
    if( hfile == NULL ){
       if( g_opts.debug > 0 )
-         LNI_FERR(fname,"failed to find header file for", hname);
+         LNI_FERR(fname,"failed to find N2 header file for", hname);
       return NULL;
    } else if( g_opts.debug > 1 )
       fprintf(stderr,"-d %s: found N2 header filename '%s'\n",fname,hfile);
@@ -5731,7 +5747,7 @@ void * nifti_read_header( const char *hname, int *nver, int check )
    hfile = nifti_findhdrname(hname);
    if( hfile == NULL ){
       if(g_opts.debug > 0)
-         LNI_FERR(fname,"failed to find header file for", hname);
+         LNI_FERR(fname,"failed to find any header file for", hname);
       return NULL;  /* check return */
    } else if( g_opts.debug > 2 )
       fprintf(stderr,"-d %s: found header filename '%s'\n",fname,hfile);
@@ -5742,7 +5758,7 @@ void * nifti_read_header( const char *hname, int *nver, int check )
    /**- open file, separate reading of header, extensions and data */
    fp = znzopen(hfile, "rb", nifti_is_gzfile(hfile));
    if( znz_isnull(fp) ){
-      if( g_opts.debug > 0 ) LNI_FERR(fname,"failed to open header file",hfile);
+      if( g_opts.debug > 0 ) LNI_FERR(fname,"failed to open any header file",hfile);
       free(hfile);
       return NULL;
    }
@@ -5885,7 +5901,7 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
    /**- open file, separate reading of header, extensions and data */
    fp = znzopen(hfile, "rb", nifti_is_gzfile(hfile));
    if( znz_isnull(fp) ){
-      if( g_opts.debug > 0 ) LNI_FERR(fname,"failed to open header file",hfile);
+      if( g_opts.debug > 0 ) LNI_FERR(fname,"failed to open a header file",hfile);
       free(hfile);
       return NULL;
    }
@@ -7473,6 +7489,10 @@ int nifti_convert_nim2n1hdr(const nifti_image * nim, nifti_1_header * hdr)
        nhdr.qoffset_z  = nim->qoffset_z ;
        nhdr.pixdim[0]  = (nim->qfac >= 0.0) ? 1.0F : -1.0F ;
      }
+     #ifdef FSLSTYLE
+     else //this helps for regression testing between this library and fsl, there is no other purpose. Without this you get false alarms
+       nhdr.pixdim[0]  = 1.0; //default if unknown and not needed
+     #endif
 
      if( nim->sform_code > 0 ){
        nhdr.sform_code = nim->sform_code ;
@@ -7584,6 +7604,10 @@ int nifti_convert_nim2n2hdr(const nifti_image * nim, nifti_2_header * hdr)
      nhdr.qoffset_z  = nim->qoffset_z ;
      nhdr.pixdim[0]  = (nim->qfac >= 0.0) ? 1.0F : -1.0F ;
    }
+   #ifdef FSLSTYLE
+   else //this helps for regression testing between this library and fsl, there is no other purpose. Without this you get false alarms
+     nhdr.pixdim[0]  = 1.0; //default if unknown and not needed
+   #endif
 
    if( nim->sform_code > 0 ){
      nhdr.sform_code = nim->sform_code ;
@@ -7915,6 +7939,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
       /* we will write the header to a new file */
       if( g_opts.debug > 2 )
          fprintf(stderr,"+d opening output file %s [%s]\n",nim->fname,opts);
+
       fp = znzopen( nim->fname , opts , nifti_is_gzfile(nim->fname) ) ;
       if( znz_isnull(fp) ){
          LNI_FERR(func,"cannot open output file",nim->fname);

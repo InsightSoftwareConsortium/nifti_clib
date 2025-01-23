@@ -4045,7 +4045,7 @@ static int convert_datatype(nifti_image * nim, nifti_brick_list * NBL,
       fprintf(stderr, "++ convert datatype: %s to %s, v,f = %d,%d\n",
               nifti_datatype_to_string(nim->datatype),
               nifti_datatype_to_string(new_type), verify, fail_choice);
-      fprintf(stderr, "   lossless = %d\n", 
+      fprintf(stderr, "   lossless = %d\n",
               is_lossless(nim->datatype, new_type));
    }
 
@@ -4205,7 +4205,7 @@ static int convert_NBL_data(nifti_brick_list * NBL, int old_type, int new_type,
 /*----------------------------------------------------------------------
  * perform actual data conversion (basic checks are already done)
  *
- * It is not clear how to do this without an NxN set of cases, since 
+ * It is not clear how to do this without an NxN set of cases, since
  * the types must be explicitly noted for each pair, even with macros.
  *
  * So it is all written out, even when in and out types match, so that
@@ -5459,7 +5459,7 @@ static int is_lossless(int old_type, int new_type)
    int has_int_space;      /* is there int/mati ssa space? */
 
    /*-- invalid types are either binary (bits) or unknown --*/
-   if( ! nifti_datatype_is_valid(old_type, 1) || 
+   if( ! nifti_datatype_is_valid(old_type, 1) ||
        ! nifti_datatype_is_valid(new_type, 1) ) {
       if( g_debug > 0 )
          fprintf(stderr,"** is_lossless: invalid types %d, %d\n",
@@ -5472,7 +5472,7 @@ static int is_lossless(int old_type, int new_type)
    o_signed = type_is_signed(old_type);   /* signed? */
    n_signed = type_is_signed(new_type);
    o_inttyp = nifti_is_inttype(old_type); /* integral?  only using old */
-   
+
    /* RGB? */
    o_rgbtyp = ( old_type == NIFTI_TYPE_RGB24 || old_type == NIFTI_TYPE_RGBA32 );
    n_rgbtyp = ( new_type == NIFTI_TYPE_RGB24 || new_type == NIFTI_TYPE_RGBA32 );
@@ -6997,7 +6997,7 @@ int nt_run_misc_nim_tests(nifti_image * nim)
    }
 
    /* test expansion of ints, as 32-bits, not usually used */
-   { 
+   {
       int        * ilist = NULL;
       const char * istr = "7,4,2..5,11..$";
       ilist = nifti_get_intlist(15, istr);
@@ -7017,7 +7017,7 @@ static int nt_test_dmat44_quatern(nifti_image * nim)
 
    float        fb, fc, fd, fx, fy, fz;
    float        x, y, z, fac;
-   
+
    fputc('\n', stdout);
    /* and the orthogonalized form */
    printf("= sform vs. orthog sform:\n");
@@ -7205,7 +7205,7 @@ int act_cbl( nt_opts * opts )
 
 /*----------------------------------------------------------------------
  * copy an image to a new file
- * 
+ *
  * This is a straight NIFTI copy, without cbl (so upper dims are intact).
  *
  * Note: nt_image_read() allows for modifications, e.g. to the datatype.
