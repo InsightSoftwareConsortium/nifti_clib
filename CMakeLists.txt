@@ -54,12 +54,17 @@ option( BUILD_SHARED_LIBS "Toggle building shared libraries." OFF)
 if(NOT FSLSTYLE)
   # If FSL_STYLE is not defined, then
   option( FSLSTYLE_NAME_CONFLICTS "FSL behavior for name conflicts (generate error if both img.nii and img.nii.gz exists)" OFF)
+  option( FSLSTYLE_PIGZ_SUPPORT   "PIGZ: Use PIGZ parallel compression if environment includes AFNI_COMPRESSOR=PIGZ" OFF)
 else()
   set(FSLSTYLE_NAME_CONFLICTS ON CACHE BOOL "FSL behavior for name conflicts (ambiguous files img.nii and img.nii.gz is an error)" FORCE)
+  set(FSLSTYLE_PIGZ_SUPPORT   ON CACHE BOOL "PIGZ support" FORCE)
 endif()
 
 if(FSLSTYLE_NAME_CONFLICTS)
   ADD_DEFINITIONS(-DFSLSTYLE)
+endif()
+if(FSLSTYLE_PIGZ_SUPPORT)
+  ADD_DEFINITIONS(-DPIGZ)
 endif()
 
 # Include executables as part of the build

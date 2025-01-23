@@ -12,7 +12,7 @@ CFLAGS          = -Wall -std=gnu99 -pedantic $(USEZLIB) $(IFLAGS)
 
 #run "FSLSTYLE=1 make" for JPEGLS build
 ifeq "$(FSLSTYLE)" "1"
-	CFLAGS += -DFSLSTYLE
+	CFLAGS += -DFSLSTYLE -DPIGZ
 endif
 
 LLIBS 		= -lz -lm
