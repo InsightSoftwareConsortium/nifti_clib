@@ -11,7 +11,7 @@ This repository contains the C implementations. ( See other repositories at
 `Nifti_clib` has been developed by members of the NIFTI DFWG and volunteers in the
 neuroimaging community and serves as a reference implementation of the nifti-1
 and nifti-2 file formats. In addition to being a reference implementation, we
-hope it is also a useful i/o library. 
+hope it is also a useful i/o library.
 
 `Nifti_clib` code is released into the public domain,
 developers are encouraged to incorporate niftilib code into their applications,
@@ -42,7 +42,7 @@ Introductory, coming soon.
 * Version 0.3 beta release April 2006
 * Version 0.2 beta release August 12, 2005
 * Version 0.1 beta release March 11, 2005
- 
+
 niftilib code is released into the public domain.
 
 

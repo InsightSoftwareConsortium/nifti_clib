@@ -131,7 +131,7 @@ Updated in version 3.0.0 July 16, 2020
     - JL/HJ/RR: added more tests
     - PT/DRG: added xform code NIFTI_XFORM_TEMPLATE_OTHER
     - RR added c21 test scripts
-    
+
 
 -----------------------------------------------------------------
 Updated in version 3.0.1 Aug 07, 2020

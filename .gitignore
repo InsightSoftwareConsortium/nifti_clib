@@ -38,6 +38,6 @@ CMakeLists.txt.user*
 :w
 
 # Files when cmake builds in the source tree
-CMakeCache.txt 
+CMakeCache.txt
 CMakeFiles/*
 

@@ -69,7 +69,7 @@ set( USE_CIFTI_CODE ON  CACHE BOOL "Do not build CIFTI provided by NIFTI" FORCE 
 set( USE_NIFTICDF_CODE ON CACHE BOOL "Do not build NIFTICDF provided by NIFTI" FORCE )
 set( NIFTI_USE_PACKAGING OFF CACHE BOOL "Do not use packaging from nifti when included as part of another package" FORCE )
 set( NIFTI_BUILD_APPLICATIONS ON CACHE BOOL "Do not build applications provided by NIFTI" FORCE )
-# Testing is not compatible with SILLYDEMO at the moment 
+# Testing is not compatible with SILLYDEMO at the moment
 set( NIFTI_BUILD_TESTING ON CACHE BOOL "Do not build nifit testing applications" FORCE)
 
 add_definitions(-DHAVE_ZLIB)
