@@ -80,11 +80,11 @@ extern "C" {
 /********************** Some sample data structures **************************/
 
 typedef struct {                   /** 4x4 matrix struct **/
-  float m[4][4] ;
+   float m[4][4] ;
 } mat44 ;
 
 typedef struct {                   /** 3x3 matrix struct **/
-  float m[3][3] ;
+   float m[3][3] ;
 } mat33 ;
 
 /*...........................................................................*/
@@ -94,13 +94,13 @@ typedef struct {                   /** 3x3 matrix struct **/
  *         codes.
  */
 typedef enum _analyze75_orient_code {
-  a75_transverse_unflipped = 0,
-  a75_coronal_unflipped = 1,
-  a75_sagittal_unflipped = 2,
-  a75_transverse_flipped = 3,
-  a75_coronal_flipped = 4,
-  a75_sagittal_flipped = 5,
-  a75_orient_unknown = 6
+   a75_transverse_unflipped = 0,
+   a75_coronal_unflipped = 1,
+   a75_sagittal_unflipped = 2,
+   a75_transverse_flipped = 3,
+   a75_coronal_flipped = 4,
+   a75_sagittal_flipped = 5,
+   a75_orient_unknown = 6
 } analyze_75_orient_code;
 
 /*! \struct nifti_image
@@ -111,85 +111,85 @@ typedef enum _analyze75_orient_code {
  */
 typedef struct {                /*!< Image storage struct **/
 
-  int ndim ;                    /*!< last dimension greater than 1 (1..7) */
-  int nx ;                      /*!< dimensions of grid array             */
-  int ny ;                      /*!< dimensions of grid array             */
-  int nz ;                      /*!< dimensions of grid array             */
-  int nt ;                      /*!< dimensions of grid array             */
-  int nu ;                      /*!< dimensions of grid array             */
-  int nv ;                      /*!< dimensions of grid array             */
-  int nw ;                      /*!< dimensions of grid array             */
-  int dim[8] ;                  /*!< dim[0]=ndim, dim[1]=nx, etc.         */
-  size_t nvox ;                    /*!< number of voxels = nx*ny*nz*...*nw   */
-  int nbyper ;                  /*!< bytes per voxel, matches datatype    */
-  int datatype ;                /*!< type of data in voxels: DT_* code    */
+   int ndim ;                   /*!< last dimension greater than 1 (1..7) */
+   int nx ;                     /*!< dimensions of grid array             */
+   int ny ;                     /*!< dimensions of grid array             */
+   int nz ;                     /*!< dimensions of grid array             */
+   int nt ;                     /*!< dimensions of grid array             */
+   int nu ;                     /*!< dimensions of grid array             */
+   int nv ;                     /*!< dimensions of grid array             */
+   int nw ;                     /*!< dimensions of grid array             */
+   int dim[8] ;                 /*!< dim[0]=ndim, dim[1]=nx, etc.         */
+   size_t nvox ;                   /*!< number of voxels = nx*ny*nz*...*nw   */
+   int nbyper ;                 /*!< bytes per voxel, matches datatype    */
+   int datatype ;               /*!< type of data in voxels: DT_* code    */
 
-  float dx ;                    /*!< grid spacings      */
-  float dy ;                    /*!< grid spacings      */
-  float dz ;                    /*!< grid spacings      */
-  float dt ;                    /*!< grid spacings      */
-  float du ;                    /*!< grid spacings      */
-  float dv ;                    /*!< grid spacings      */
-  float dw ;                    /*!< grid spacings      */
-  float pixdim[8] ;             /*!< pixdim[1]=dx, etc. */
+   float dx ;                   /*!< grid spacings      */
+   float dy ;                   /*!< grid spacings      */
+   float dz ;                   /*!< grid spacings      */
+   float dt ;                   /*!< grid spacings      */
+   float du ;                   /*!< grid spacings      */
+   float dv ;                   /*!< grid spacings      */
+   float dw ;                   /*!< grid spacings      */
+   float pixdim[8] ;            /*!< pixdim[1]=dx, etc. */
 
-  float scl_slope ;             /*!< scaling parameter - slope        */
-  float scl_inter ;             /*!< scaling parameter - intercept    */
+   float scl_slope ;            /*!< scaling parameter - slope        */
+   float scl_inter ;            /*!< scaling parameter - intercept    */
 
-  float cal_min ;               /*!< calibration parameter, minimum   */
-  float cal_max ;               /*!< calibration parameter, maximum   */
+   float cal_min ;              /*!< calibration parameter, minimum   */
+   float cal_max ;              /*!< calibration parameter, maximum   */
 
-  int qform_code ;              /*!< codes for (x,y,z) space meaning  */
-  int sform_code ;              /*!< codes for (x,y,z) space meaning  */
+   int qform_code ;             /*!< codes for (x,y,z) space meaning  */
+   int sform_code ;             /*!< codes for (x,y,z) space meaning  */
 
-  int freq_dim  ;               /*!< indexes (1,2,3, or 0) for MRI    */
-  int phase_dim ;               /*!< directions in dim[]/pixdim[]     */
-  int slice_dim ;               /*!< directions in dim[]/pixdim[]     */
+   int freq_dim  ;              /*!< indexes (1,2,3, or 0) for MRI    */
+   int phase_dim ;              /*!< directions in dim[]/pixdim[]     */
+   int slice_dim ;              /*!< directions in dim[]/pixdim[]     */
 
-  int   slice_code  ;           /*!< code for slice timing pattern    */
-  int   slice_start ;           /*!< index for start of slices        */
-  int   slice_end   ;           /*!< index for end of slices          */
-  float slice_duration ;        /*!< time between individual slices   */
+   int   slice_code  ;          /*!< code for slice timing pattern    */
+   int   slice_start ;          /*!< index for start of slices        */
+   int   slice_end   ;          /*!< index for end of slices          */
+   float slice_duration ;       /*!< time between individual slices   */
 
   /*! quaternion transform parameters
     [when writing a dataset, these are used for qform, NOT qto_xyz]   */
-  float quatern_b , quatern_c , quatern_d ,
+   float quatern_b , quatern_c , quatern_d ,
         qoffset_x , qoffset_y , qoffset_z ,
         qfac      ;
 
-  mat44 qto_xyz ;               /*!< qform: transform (i,j,k) to (x,y,z) */
-  mat44 qto_ijk ;               /*!< qform: transform (x,y,z) to (i,j,k) */
+   mat44 qto_xyz ;              /*!< qform: transform (i,j,k) to (x,y,z) */
+   mat44 qto_ijk ;              /*!< qform: transform (x,y,z) to (i,j,k) */
 
-  mat44 sto_xyz ;               /*!< sform: transform (i,j,k) to (x,y,z) */
-  mat44 sto_ijk ;               /*!< sform: transform (x,y,z) to (i,j,k) */
+   mat44 sto_xyz ;              /*!< sform: transform (i,j,k) to (x,y,z) */
+   mat44 sto_ijk ;              /*!< sform: transform (x,y,z) to (i,j,k) */
 
-  float toffset ;               /*!< time coordinate offset */
+   float toffset ;              /*!< time coordinate offset */
 
-  int xyz_units  ;              /*!< dx,dy,dz units: NIFTI_UNITS_* code  */
-  int time_units ;              /*!< dt       units: NIFTI_UNITS_* code  */
+   int xyz_units  ;             /*!< dx,dy,dz units: NIFTI_UNITS_* code  */
+   int time_units ;             /*!< dt       units: NIFTI_UNITS_* code  */
 
-  int nifti_type ;              /*!< 0==ANALYZE, 1==NIFTI-1 (1 file),
+   int nifti_type ;             /*!< 0==ANALYZE, 1==NIFTI-1 (1 file),
                                                  2==NIFTI-1 (2 files),
                                                  3==NIFTI-ASCII (1 file) */
-  int   intent_code ;           /*!< statistic type (or something)       */
-  float intent_p1 ;             /*!< intent parameters                   */
-  float intent_p2 ;             /*!< intent parameters                   */
-  float intent_p3 ;             /*!< intent parameters                   */
-  char  intent_name[16] ;       /*!< optional description of intent data */
+   int   intent_code ;          /*!< statistic type (or something)       */
+   float intent_p1 ;            /*!< intent parameters                   */
+   float intent_p2 ;            /*!< intent parameters                   */
+   float intent_p3 ;            /*!< intent parameters                   */
+   char  intent_name[16] ;      /*!< optional description of intent data */
 
-  char descrip[80]  ;           /*!< optional text to describe dataset   */
-  char aux_file[24] ;           /*!< auxiliary filename                  */
+   char descrip[80]  ;          /*!< optional text to describe dataset   */
+   char aux_file[24] ;          /*!< auxiliary filename                  */
 
-  char *fname ;                 /*!< header filename (.hdr or .nii)         */
-  char *iname ;                 /*!< image filename  (.img or .nii)         */
-  int   iname_offset ;          /*!< offset into iname where data starts    */
-  int   swapsize ;              /*!< swap unit in image data (might be 0)   */
-  int   byteorder ;             /*!< byte order on disk (MSB_ or LSB_FIRST) */
-  void *data ;                  /*!< pointer to data: nbyper*nvox bytes     */
+   char *fname ;                /*!< header filename (.hdr or .nii)         */
+   char *iname ;                /*!< image filename  (.img or .nii)         */
+   int   iname_offset ;         /*!< offset into iname where data starts    */
+   int   swapsize ;             /*!< swap unit in image data (might be 0)   */
+   int   byteorder ;            /*!< byte order on disk (MSB_ or LSB_FIRST) */
+   void *data ;                 /*!< pointer to data: nbyper*nvox bytes     */
 
-  int                num_ext ;  /*!< number of extensions in ext_list       */
-  nifti1_extension * ext_list ; /*!< array of extension structs (with data) */
-  analyze_75_orient_code analyze75_orient; /*!< for old analyze files, orient */
+   int                num_ext ; /*!< number of extensions in ext_list       */
+   nifti1_extension * ext_list ; /*!< array of extension structs (with data) */
+   analyze_75_orient_code analyze75_orient; /*!< for old analyze files, orient */
 
 } nifti_image ;
 
@@ -197,9 +197,9 @@ typedef struct {                /*!< Image storage struct **/
 
 /* struct for return from nifti_image_read_bricks() */
 typedef struct {
-  int       nbricks;    /* the number of allocated pointers in 'bricks' */
-  size_t    bsize;      /* the length of each data block, in bytes      */
-  void   ** bricks;     /* array of pointers to data blocks             */
+   int       nbricks;   /* the number of allocated pointers in 'bricks' */
+   size_t    bsize;     /* the length of each data block, in bytes      */
+   void   ** bricks;    /* array of pointers to data blocks             */
 } nifti_brick_list;
 
 
@@ -211,57 +211,57 @@ typedef struct {
 typedef struct {
        /* header info fields - describes the header    overlap with NIfTI */
        /*                                              ------------------ */
-       int sizeof_hdr;                  /* 0 + 4        same              */
-       char data_type[10];              /* 4 + 10       same              */
-       char db_name[18];                /* 14 + 18      same              */
-       int extents;                     /* 32 + 4       same              */
-       short int session_error;         /* 36 + 2       same              */
-       char regular;                    /* 38 + 1       same              */
-       char hkey_un0;                   /* 39 + 1                40 bytes */
+   int sizeof_hdr;                      /* 0 + 4        same              */
+   char data_type[10];                  /* 4 + 10       same              */
+   char db_name[18];                    /* 14 + 18      same              */
+   int extents;                         /* 32 + 4       same              */
+   short int session_error;             /* 36 + 2       same              */
+   char regular;                        /* 38 + 1       same              */
+   char hkey_un0;                       /* 39 + 1                40 bytes */
 
        /* image dimension fields - describes image sizes */
-       short int dim[8];                /* 0 + 16       same              */
-       short int unused8;               /* 16 + 2       intent_p1...      */
-       short int unused9;               /* 18 + 2         ...             */
-       short int unused10;              /* 20 + 2       intent_p2...      */
-       short int unused11;              /* 22 + 2         ...             */
-       short int unused12;              /* 24 + 2       intent_p3...      */
-       short int unused13;              /* 26 + 2         ...             */
-       short int unused14;              /* 28 + 2       intent_code       */
-       short int datatype;              /* 30 + 2       same              */
-       short int bitpix;                /* 32 + 2       same              */
-       short int dim_un0;               /* 34 + 2       slice_start       */
-       float pixdim[8];                 /* 36 + 32      same              */
+   short int dim[8];                    /* 0 + 16       same              */
+   short int unused8;                   /* 16 + 2       intent_p1...      */
+   short int unused9;                   /* 18 + 2         ...             */
+   short int unused10;                  /* 20 + 2       intent_p2...      */
+   short int unused11;                  /* 22 + 2         ...             */
+   short int unused12;                  /* 24 + 2       intent_p3...      */
+   short int unused13;                  /* 26 + 2         ...             */
+   short int unused14;                  /* 28 + 2       intent_code       */
+   short int datatype;                  /* 30 + 2       same              */
+   short int bitpix;                    /* 32 + 2       same              */
+   short int dim_un0;                   /* 34 + 2       slice_start       */
+   float pixdim[8];                     /* 36 + 32      same              */
 
-       float vox_offset;                /* 68 + 4       same              */
-       float funused1;                  /* 72 + 4       scl_slope         */
-       float funused2;                  /* 76 + 4       scl_inter         */
-       float funused3;                  /* 80 + 4       slice_end,        */
+   float vox_offset;                    /* 68 + 4       same              */
+   float funused1;                      /* 72 + 4       scl_slope         */
+   float funused2;                      /* 76 + 4       scl_inter         */
+   float funused3;                      /* 80 + 4       slice_end,        */
                                                      /* slice_code,       */
                                                      /* xyzt_units        */
-       float cal_max;                   /* 84 + 4       same              */
-       float cal_min;                   /* 88 + 4       same              */
-       float compressed;                /* 92 + 4       slice_duration    */
-       float verified;                  /* 96 + 4       toffset           */
-       int glmax,glmin;                 /* 100 + 8              108 bytes */
+   float cal_max;                       /* 84 + 4       same              */
+   float cal_min;                       /* 88 + 4       same              */
+   float compressed;                    /* 92 + 4       slice_duration    */
+   float verified;                      /* 96 + 4       toffset           */
+   int glmax,glmin;                     /* 100 + 8              108 bytes */
 
        /* data history fields - optional */
-       char descrip[80];                /* 0 + 80       same              */
-       char aux_file[24];               /* 80 + 24      same              */
-       char orient;                     /* 104 + 1      NO GOOD OVERLAP   */
-       char originator[10];             /* 105 + 10     FROM HERE DOWN... */
-       char generated[10];              /* 115 + 10                       */
-       char scannum[10];                /* 125 + 10                       */
-       char patient_id[10];             /* 135 + 10                       */
-       char exp_date[10];               /* 145 + 10                       */
-       char exp_time[10];               /* 155 + 10                       */
-       char hist_un0[3];                /* 165 + 3                        */
-       int views;                       /* 168 + 4                        */
-       int vols_added;                  /* 172 + 4                        */
-       int start_field;                 /* 176 + 4                        */
-       int field_skip;                  /* 180 + 4                        */
-       int omax, omin;                  /* 184 + 8                        */
-       int smax, smin;                  /* 192 + 8              200 bytes */
+   char descrip[80];                    /* 0 + 80       same              */
+   char aux_file[24];                   /* 80 + 24      same              */
+   char orient;                         /* 104 + 1      NO GOOD OVERLAP   */
+   char originator[10];                 /* 105 + 10     FROM HERE DOWN... */
+   char generated[10];                  /* 115 + 10                       */
+   char scannum[10];                    /* 125 + 10                       */
+   char patient_id[10];                 /* 135 + 10                       */
+   char exp_date[10];                   /* 145 + 10                       */
+   char exp_time[10];                   /* 155 + 10                       */
+   char hist_un0[3];                    /* 165 + 3                        */
+   int views;                           /* 168 + 4                        */
+   int vols_added;                      /* 172 + 4                        */
+   int start_field;                     /* 176 + 4                        */
+   int field_skip;                      /* 180 + 4                        */
+   int omax, omin;                      /* 184 + 8                        */
+   int smax, smin;                      /* 192 + 8              200 bytes */
 } nifti_analyze75;                                   /* total:  348 bytes */
 
 
@@ -315,7 +315,7 @@ NIO_API int          nifti_image_load    ( nifti_image *nim ) ;
 NIO_API void         nifti_image_unload  ( nifti_image *nim ) ;
 NIO_API void         nifti_image_free    ( nifti_image *nim ) ;
 
-NIO_API int          nifti_read_collapsed_image( nifti_image * nim, const int dims [8],
+NIO_API int          nifti_read_collapsed_image( nifti_image * nim, const int dims[8],
                                                  void ** data );
 
 NIO_API int          nifti_read_subregion_image( nifti_image * nim,
@@ -367,7 +367,7 @@ NIO_API znzFile nifti_image_open( const char * hname, const char * opts, nifti_i
 NIO_API znzFile nifti_image_write_hdr_img( nifti_image *nim, int write_data,
                                            const char* opts);
 NIO_API znzFile nifti_image_write_hdr_img2( nifti_image *nim , int write_opts ,
-                                            const char* opts, znzFile imgfile, 
+                                            const char* opts, znzFile imgfile,
                                             const nifti_brick_list * NBL);
 NIO_API size_t  nifti_read_buffer( znzFile fp, void* dataptr, size_t ntot,
                                    nifti_image *nim);
@@ -377,7 +377,7 @@ NIO_API size_t  nifti_write_buffer( znzFile fp, const void * buffer, size_t numb
 NIO_API nifti_image *nifti_read_ascii_image( znzFile fp, char *fname, int flen,
                                              int read_data);
 NIO_API znzFile nifti_write_ascii_image( nifti_image *nim, const nifti_brick_list * NBL,
-                                         const char * opts, int write_data, 
+                                         const char * opts, int write_data,
                                          int leave_open);
 
 
@@ -533,16 +533,16 @@ NIO_API int    valid_nifti_extensions(const nifti_image *nim);
 #ifdef NIFTI1_IO_C
 
 typedef struct {
-    int debug;               /*!< debug level for status reports  */
-    int skip_blank_ext;      /*!< skip extender if no extensions  */
-    int allow_upper_fext;    /*!< allow uppercase file extensions */
+   int debug;                /*!< debug level for status reports  */
+   int skip_blank_ext;       /*!< skip extender if no extensions  */
+   int allow_upper_fext;     /*!< allow uppercase file extensions */
 } nifti_global_options;
 
 typedef struct {
-    int    type;           /* should match the NIFTI_TYPE_ #define */
-    int    nbyper;         /* bytes per value, matches nifti_image */
-    int    swapsize;       /* bytes per swap piece, matches nifti_image */
-    char const * const name;           /* text string to match #define */
+   int    type;            /* should match the NIFTI_TYPE_ #define */
+   int    nbyper;          /* bytes per value, matches nifti_image */
+   int    swapsize;        /* bytes per swap piece, matches nifti_image */
+   char const * const name;            /* text string to match #define */
 } nifti_type_ele;
 
 #undef  LNI_FERR /* local nifti file error, to be compact and repetitive */

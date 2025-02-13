@@ -3,17 +3,17 @@
 
 #define NT_CMD_LEN 2048
 
-typedef struct{
+typedef struct {
    int           len;
    const char ** list;
 } str_list;
 
-typedef struct{
+typedef struct {
    int     len;
    int   * list;
 } int_list;
 
-typedef struct{
+typedef struct {
             /* action options (flags) */
    int      check_hdr,  check_nim;
    int      diff_hdr,   diff_nim;

@@ -3,9 +3,9 @@
 
 static int local_fileexists(const char* fname)
 {
-    znzFile fp = znzopen( fname , "rb" , 1 ) ;
-    if( !znz_isnull(fp) )  { znzclose(fp);  return 1; }
-    return 0; /* fp is NULL */
+   znzFile fp = znzopen( fname , "rb" , 1 ) ;
+   if( !znz_isnull(fp) )  { znzclose(fp);  return 1; }
+   return 0;  /* fp is NULL */
 }
 
 /*-----------------------------------------------*/
@@ -22,18 +22,18 @@ int main( int argc , char *argv[] )
    size_t       ll;
 
    if( argc < 2 || strcmp(argv[1],"-help") == 0 ){
-     printf("Usage: nifti1_test [-n2|-n1|-na|-a2] infile [prefix]\n"
+      printf("Usage: nifti1_test [-n2|-n1|-na|-a2] infile [prefix]\n"
             "\n"
             " If prefix is given, then the options mean:\n"
             "  -a2 ==> write an ANALYZE 7.5 file pair: prefix.hdr/prefix.img\n"
             "  -n2 ==> write a NIFTI-1 file pair: prefix.hdr/prefix.img\n"
             "  -n1 ==> write a NIFTI-1 single file: prefix.nii\n"
             "  -na ==> write a NIFTI-1 ASCII+binary file: prefix.nia\n");
-     printf("  -za2 => write an ANALYZE 7.5 file pair:\n"
+      printf("  -za2 => write an ANALYZE 7.5 file pair:\n"
             "          prefix.hdr.gz/prefix.img.gz\n"
             "  -zn2 => write a NIFTI-1 file pair: prefix.hdr.gz/prefix.img.gz\n"
             "  -zn1 => write a NIFTI-1 single file: prefix.nii.gz\n");
-     printf(" The default is '-n1'.\n"
+      printf(" The default is '-n1'.\n"
             "\n"
             " If prefix is not given, then the header info from infile\n"
             " file is printed to stdout.\n"
@@ -42,32 +42,32 @@ int main( int argc , char *argv[] )
             " NIFTI-1 specification, but is provided mostly for ease\n"
             " of visualization (e.g., you can edit a .nia file and\n"
             " change some header fields, then rewrite it as .nii)\n"
-           ) ;
-     printf("\nsizeof(nifti_1_header)=%u\n",
+      ) ;
+      printf("\nsizeof(nifti_1_header)=%u\n",
             (unsigned int)sizeof(nifti_1_header)) ;
-     exit(0) ;
+      exit(0) ;
    }
 
    if( argv[1][0] == '-' ){
-     argn=1;
-     if (argv[1][1] == 'z' ) {
-       usegzip = 1;
-       argn=2;
-     }
-     if( argv[1][argn] == 'a' ){
-       outmode = 0 ;
-     } else if( argv[1][argn] == 'n' ){
-       switch( argv[1][argn+1] ){
-         case '1': outmode = 1 ; break ;
-         default:  outmode = 2 ; break ;
-         case 'a': outmode = 3 ; break ;
-       }
-     }
-     iarg++ ;
+      argn=1;
+      if (argv[1][1] == 'z' ) {
+         usegzip = 1;
+         argn=2;
+      }
+      if( argv[1][argn] == 'a' ){
+         outmode = 0 ;
+      } else if( argv[1][argn] == 'n' ){
+         switch( argv[1][argn+1] ){
+            case '1': outmode = 1 ; break ;
+            default:  outmode = 2 ; break ;
+            case 'a': outmode = 3 ; break ;
+         }
+      }
+      iarg++ ;
    }
 
    if( iarg >= argc ){
-     fprintf(stderr,"** ERROR: no input file on command line!?\n"); exit(1);
+      fprintf(stderr,"** ERROR: no input file on command line!?\n"); exit(1);
    }
 
    nim = nifti_image_read( argv[iarg++] , 1 ) ;
@@ -85,18 +85,18 @@ int main( int argc , char *argv[] )
    nim->iname = (char *)calloc(1,ll+8) ; strcpy(nim->iname,tmpstr) ;
    free(tmpstr);
    if( nim->nifti_type == 1 ){
-     strcat(nim->fname,".nii") ;
-     strcat(nim->iname,".nii") ;
+      strcat(nim->fname,".nii") ;
+      strcat(nim->iname,".nii") ;
    } else if ( nim->nifti_type == 3 ){
-     strcat(nim->fname,".nia") ;
-     strcat(nim->iname,".nia") ;
+      strcat(nim->fname,".nia") ;
+      strcat(nim->iname,".nia") ;
    } else {
-     strcat(nim->fname,".hdr") ;
-     strcat(nim->iname,".img") ;
+      strcat(nim->fname,".hdr") ;
+      strcat(nim->iname,".img") ;
    }
    if (usegzip) {
-     strcat(nim->fname,".gz");
-     strcat(nim->iname,".gz");
+      strcat(nim->fname,".gz");
+      strcat(nim->iname,".gz");
    }
    if( nifti_image_write_status( nim ) ) {
       fprintf(stderr, "** failed to write nifti_image\n");
@@ -106,7 +106,7 @@ int main( int argc , char *argv[] )
 
    if ( ! local_fileexists( nim->fname ) )
    {
-     return EXIT_FAILURE;
+      return EXIT_FAILURE;
    }
    nifti_image_free( nim ) ;
    return EXIT_SUCCESS;
