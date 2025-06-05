@@ -15,8 +15,9 @@
 *.pyc
 
 # Binary directory
-BUILD*
-build*
+/BUILD*
+/build*
+/cmake-build*
 
 # qtcreator
 CMakeLists.txt.user*

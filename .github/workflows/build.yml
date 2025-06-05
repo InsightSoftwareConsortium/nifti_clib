@@ -1,0 +1,135 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: coverage-gcc-linux
+            os: ubuntu-latest
+            compiler: gcc
+            scanbuild: ""
+            cflags: "-g -O0 -Wall -Wextra -m64 -W -Wshadow -Wunused-variable -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers -Wno-deprecated -Wwrite-strings -fprofile-arcs -ftest-coverage"
+            cxxflags: "-g -O0 -Wall -Wextra -m64 -W -Wshadow -Wunused-variable -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers -Wno-deprecated -Woverloaded-virtual -Wwrite-strings -fprofile-arcs -ftest-coverage"
+            ldflags: "-fprofile-arcs -ftest-coverage -lgcov"
+            bldprefix: coverage
+            bname: system_gcc
+            with_coverage: "ON"
+            with_memcheck: "OFF"
+            shell_tests: "ON"
+
+          - name: valgrind-gcc-linux
+            os: ubuntu-latest
+            compiler: gcc
+            scanbuild: ""
+            cflags: "-g -O0 -Wall -Wextra -m64 -W -Wshadow -Wunused-variable -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers -Wno-deprecated -Wwrite-strings"
+            cxxflags: "-g -O0 -Wall -Wextra -m64 -W -Wshadow -Wunused-variable -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers -Wno-deprecated -Wwrite-strings"
+            ldflags: ""
+            bldprefix: valgrind
+            bname: system_gcc-valgrind
+            with_coverage: "OFF"
+            with_memcheck: "ON"
+            shell_tests: "OFF"
+
+          - name: use_prefix-gcc-linux
+            os: ubuntu-latest
+            compiler: gcc
+            scanbuild: ""
+            cflags: ""
+            cxxflags: ""
+            ldflags: ""
+            bldprefix: use_prefix
+            bname: system_gcc
+            with_coverage: "OFF"
+            with_memcheck: "OFF"
+            shell_tests: "OFF"
+
+          - name: sanitize-clang-linux
+            os: ubuntu-latest
+            compiler: clang
+            scanbuild: "scan-build -v --status-bugs"
+            cflags: "-Wall -Wextra -m64 -W -Wshadow -Wunused-variable -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers -Wno-deprecated -Wwrite-strings -fsanitize=address,undefined"
+            cxxflags: "-g -Wall -Wextra -m64 -fsanitize=address,undefined"
+            ldflags: ""
+            bldprefix: sanitize
+            bname: fsanitize_clang
+            with_coverage: "OFF"
+            with_memcheck: "OFF"
+            shell_tests: "ON"
+
+          - name: rel-clang-macos
+            os: macos-11
+            compiler: clang
+            scanbuild: ""
+            cflags: "-O3 -Wall -Wextra -Wshadow -Wunused-variable -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers -Wno-deprecated -Wwrite-strings"
+            cxxflags: "-O3 -Wall -Wextra -Wshadow -Wunused-variable -Wunused-parameter -Wunused-function -Wunused -Wno-system-headers -Wno-deprecated -Wwrite-strings"
+            ldflags: ""
+            bldprefix: rel
+            bname: osx_clang
+            with_coverage: "OFF"
+            with_memcheck: "OFF"
+            shell_tests: "ON"
+
+    env:
+      PROJECT_NAME: NIFTI_CLIB
+      PARALLEL_LEVEL: 3
+      AGENT_BUILDDIRECTORY: ${{ github.workspace }}/NIFTIworkspace
+      BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+      SYSTEM_PULLREQUEST_SOURCEBRANCH: ${{ github.head_ref }}
+      BUILD_SOURCEBRANCHNAME: ${{ github.head_ref }}
+      BUILD_BUILDID: ${{ github.run_id }}
+      SYSTEM_PULLREQUEST_PULLREQUESTNUMBER: ${{ github.event.pull_request.number }}
+      CTEST_SCRIPT_DIRECTORY: ${{ github.workspace }}/cmake
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake valgrind help2man
+
+    - name: Install Dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake sed help2man
+
+    - name: Set Compiler and Flags
+      run: |
+        echo "CC=${{ matrix.compiler }}" >> $GITHUB_ENV
+        echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+        echo "CFLAGS=${{ matrix.cflags }}" >> $GITHUB_ENV
+        echo "CXXFLAGS=${{ matrix.cxxflags }}" >> $GITHUB_ENV
+        echo "LDFLAGS=${{ matrix.ldflags }}" >> $GITHUB_ENV
+        echo "BLDPREFIX=${{ matrix.bldprefix }}" >> $GITHUB_ENV
+        echo "INTERPROCEDURAL_OPTIMIZATION=${{ matrix.interprocedural_optimization || 'OFF' }}" >> $GITHUB_ENV
+        echo "B_NAME=${{ matrix.bname }}" >> $GITHUB_ENV
+        echo "WITH_COVERAGE=${{ matrix.with_coverage }}" >> $GITHUB_ENV
+        echo "WITH_MEMCHECK=${{ matrix.with_memcheck }}" >> $GITHUB_ENV
+        echo "NIFTI_SHELL_SCRIPT_TESTS=${{ matrix.shell_tests }}" >> $GITHUB_ENV
+        echo "SCANBUILD_EXE=${{ matrix.scanbuild }}" >> $GITHUB_ENV
+
+    - name: Show Environment Info
+      run: |
+        which $CXX && $CXX --version || true
+        which $CC && $CC --version || true
+        which scan-build || true
+        which gcov && gcov --version || true
+        which valgrind && valgrind --version || true
+        which cmake && cmake --version || true
+
+    - name: Run CTest
+      run: |
+        eval $SCANBUILD_EXE ctest -S ${CTEST_SCRIPT_DIRECTORY}/travis_dashboard.cmake -V -j 4
+
