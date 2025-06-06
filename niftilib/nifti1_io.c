@@ -2810,7 +2810,7 @@ char * nifti_findhdrname(const char* fname)
       if (nifti_fileexists(gzname)) {
          fprintf(stderr,"Image Exception : Multiple possible filenames detected for basename (*.nii, *.nii.gz): %s\n", basename);
          free(gzname);
-         exit(134);
+         return NULL;
       }
       free(gzname);
       return hdrname;
@@ -4276,7 +4276,7 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
 
    #ifdef REJECT_COMPLEX
    if ((nim->datatype == DT_COMPLEX64) || (nim->datatype == DT_COMPLEX128) || (nim->datatype == DT_COMPLEX256)) {
-      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX64): use fslcomplex to manipulate: %s\n", hname);
+      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX): use fslcomplex to manipulate: %s\n", hname);
       exit(13);
     }
     #endif
@@ -5756,68 +5756,36 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 
 #ifdef PIGZ
 #ifdef HAVE_ZLIB
-int doPigz2(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
-	FILE *pigzPipe;
-	char command[768];
-    strcpy(command, "pigz" );
-    strcat(command, " -n -f > \"");
-    strcat(command, nim->fname);
-    strcat(command, "\"");
-	#ifdef _MSC_VER
-	if (( pigzPipe = _popen(command, "w")) == NULL)
-		return -1;
-	#else
-	if (( pigzPipe = popen(command, "w")) == NULL)
-		return -1;
-	#endif
-	znzFile fp;
-	fp = (znzFile) calloc(1,sizeof(struct znzptr));
-	fp->zfptr = NULL;
-	fp->withz = 0;
-    fp->nzfptr = pigzPipe;
-	fwrite(&nhdr, sizeof(nhdr), 1, pigzPipe);
-	if( nim->nifti_type != NIFTI_FTYPE_ANALYZE )
-    nifti_write_extensions(fp,nim);
-	nifti_write_all_data(fp,nim,NBL);
-	#ifdef _MSC_VER
-	_pclose(pigzPipe);
-	#else
-	pclose(pigzPipe);
-	#endif
-	free(fp);
-	return 0;
-}
-
-int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
-	FILE *pigzPipe;
-	char command[768];
-    strcpy(command, "pigz" );
-    strcat(command, " -n -f > \"");
-    strcat(command, nim->fname);
-    strcat(command, "\"");
-	#ifdef _MSC_VER
-	if (( pigzPipe = _popen(command, "w")) == NULL)
-		return -1;
-	#else
-	if (( pigzPipe = popen(command, "w")) == NULL)
-		return -1;
-	#endif
-	znzFile fp;
-	fp = (znzFile) calloc(1,sizeof(struct znzptr));
-	fp->zfptr = NULL;
-	fp->withz = 0;
-    fp->nzfptr = pigzPipe;
-	fwrite(&nhdr, sizeof(nhdr), 1, pigzPipe);
-	if( nim->nifti_type != NIFTI_FTYPE_ANALYZE )
-    nifti_write_extensions(fp,nim);
-	nifti_write_all_data(fp,nim,NBL);
-	#ifdef _MSC_VER
-	_pclose(pigzPipe);
-	#else
-	pclose(pigzPipe);
-	#endif
-	free(fp);
-	return 0;
+static int doPigz(nifti_image * nim, const nifti_1_header * nhdr, const nifti_brick_list * NBL) {
+   FILE *pigzPipe;
+   char command[4096];
+   strcpy(command, "pigz" );
+   strcat(command, " -n -f > \"");
+   strcat(command, nim->fname);
+   strcat(command, "\"");
+#ifdef _MSC_VER
+   if (( pigzPipe = _popen(command, "w")) == NULL)
+      return -1;
+#else
+   if (( pigzPipe = popen(command, "w")) == NULL)
+      return -1;
+#endif
+   znzFile fp;
+   fp = (znzFile) calloc(1, sizeof(struct znzptr));
+   fp->zfptr = NULL;
+   fp->withz = 0;
+   fp->nzfptr = pigzPipe;
+   fwrite(nhdr, sizeof(*nhdr), 1, pigzPipe);
+   if ( nim->nifti_type != NIFTI_FTYPE_ANALYZE )
+      nifti_write_extensions(fp,nim);
+   nifti_write_all_data(fp,nim,NBL);
+#ifdef _MSC_VER
+   _pclose(pigzPipe);
+#else
+   pclose(pigzPipe);
+#endif
+   free(fp);
+   return 0;
 }
 #endif //HAVE_ZLIB
 #endif //PIGZ
@@ -5919,7 +5887,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
         //export AFNI_COMPRESSOR=PIGZ
         char pigzKey[5] = "PIGZ";
         if ((value != NULL) && (strstr(value,pigzKey))) {
-              if (doPigz(nim, nhdr, NBL) == 0) //success writing with pigz
+              if (doPigz(nim, &nhdr, NBL) == 0) //success writing with pigz
                 return 0;
         }
       }
