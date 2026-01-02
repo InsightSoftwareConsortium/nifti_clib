@@ -162,6 +162,7 @@ static const char * g_history[] =
 static const char g_version[] = "version 1.24 (September 26, 2012)";
 static int  g_debug = 1;
 
+#include <assert.h>
 #include <limits.h>
 #include <string.h>
 #include <stdint.h>
@@ -3032,6 +3033,7 @@ int modify_field(void * basep, size_t baselen, field_s * field, const char * dat
 
          case NT_DT_STRING:
          {
+            assert(field->offset + field->len <= baselen); (void)baselen;
             char * dest = (char *)basep + field->offset;
             nchars = dataLength;
             strncpy(dest, data, field->len);
