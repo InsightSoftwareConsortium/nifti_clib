@@ -11049,10 +11049,11 @@ int nifti_intent_code( const char *name )
 
    if( name == NULL || *name == '\0' ) return -1 ;
 
-   unam = (char *)malloc(strlen(name)+1);
+   size_t unamlen = strlen(name)+1;
+   unam = (char *)malloc(unamlen);
    if (!unam)
       return -1 ;
-   strcpy(unam,name);
+   strlcpy(unam,name,unamlen);
    for( upt=unam ; *upt != '\0' ; upt++ ) *upt = (char)toupper(*upt) ;
 
    for( ii=NIFTI_FIRST_STATCODE ; ii <= NIFTI_LAST_STATCODE ; ii++ )
