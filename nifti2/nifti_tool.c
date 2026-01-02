@@ -6123,8 +6123,7 @@ int fill_field( field_s * fp, int type, int offset, int num, const char * name )
    fp->size   = 1;     /* init before check */
    fp->len    = num;
 
-   strncpy(fp->name, name, sizeof(fp->name));
-   fp->name[sizeof(fp->name) - 1] = 0;
+   strlcpy(fp->name, name, sizeof(fp->name));
 
    switch( type ){
       case DT_UNKNOWN:
