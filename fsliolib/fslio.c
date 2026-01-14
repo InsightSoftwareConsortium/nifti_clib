@@ -809,7 +809,6 @@ void* FslReadAllVolumes(FSLIO* fslio, char* filename)
   /* check for failure, from David Akers */
   if (fslio->niftiptr == NULL) {
         FSLIOERR("FslReadAllVolumes: error reading NIfTI image");
-        return(NULL);
   }
 
   FslSetFileType(fslio,fslio->niftiptr->nifti_type);
@@ -2092,7 +2091,6 @@ FSLIO * FslReadHeader(char *fname)
 
   if (fslio->niftiptr == NULL) {
         FSLIOERR("FslReadHeader: error reading header information");
-        return(NULL);
   }
 
   fslio->file_mode = FslGetReadFileType(fslio);
