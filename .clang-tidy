@@ -1,46 +1,129 @@
+# clang-tidy configuration for nifti_clib.
+#
+# This is a C11 codebase that ships a stable ABI.  Two consequences shape
+# the list below:
+#
+#   * Checks written for C++ idioms are noise here and are turned off
+#     rather than left to accumulate.
+#   * Any check that wants to change linkage or a declaration in an
+#     installed header is off, and must stay off.  See the ABI section.
+#
+# Run it with:
+#   cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+#   run-clang-tidy -p build -j "$(nproc)" -quiet
+#
 Checks: '-*,
   android-*,
   -android-cloexec-fopen,
+
   bugprone-*,
-  -bugprone-narrowing-conversions,
-  -bugprone-signed-char-misuse,
+  -bugprone-assignment-in-if-condition,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
-  -bugprone-not-null-terminated-result,
   -bugprone-implicit-widening-of-multiplication-result,
-  -bugprone-assignment-in-if-condition,
-  -bugprone-macro-parentheses,
+  -bugprone-narrowing-conversions,
+  -bugprone-not-null-terminated-result,
+  -bugprone-signed-char-misuse,
+
   cert-*,
-  -cert-str34-c,
-  -cert-err34-c,
   -cert-err33-c,
+  -cert-err34-c,
   -cert-flp30-c,
+  -cert-str34-c,
+
   clang-analyzer-*,
-  -clang-analyzer-alpha.clone.CloneChecker,
-  -clang-analyzer-alpha.deadcode.UnreachableCode,
-  -clang-analyzer-security.insecureAPI.strcpy,
-  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -clang-analyzer-security.FloatLoopCounter,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -clang-analyzer-security.insecureAPI.strcpy,
+
   google-*,
-  -google-readability-casting,
   -google-readability-braces-around-statements,
+  -google-readability-casting,
   -google-readability-function-size,
+
   misc-*,
   -misc-confusable-identifiers,
+  -misc-include-cleaner,
   -misc-no-recursion,
+  -misc-use-internal-linkage,
+
   performance-*,
   -performance-type-promotion-in-math-fn,
+
   readability-*,
-  -readability-magic-numbers,
+  -readability-avoid-nested-conditional-operator,
+  -readability-avoid-unconditional-preprocessor-if,
+  -readability-braces-around-statements,
   -readability-else-after-return,
   -readability-identifier-length,
+  -readability-inconsistent-ifelse-braces,
   -readability-isolate-declaration,
-  -readability-braces-around-statements,
+  -readability-magic-numbers,
+  -readability-math-missing-parentheses,
+  -readability-misleading-indentation,
+  -readability-named-parameter,
   -readability-non-const-parameter,
-  -readability-misleading-indentation'
+  -readability-redundant-parentheses'
 
+# ---------------------------------------------------------------------------
+# ABI: checks that must never be enabled
+#
+#   misc-use-internal-linkage    Wants `static` on every function without a
+#     visible external use.  It flags 29 distinct functions here, and 13 of
+#     them are symbols currently exported by libniftiio, libfslio or
+#     libcifti -- FslFileType, FslGetHdrImgNames, fsl_fileexists,
+#     axml_recur_find_xml and the rest.  Applying the fix-it deletes them
+#     from the shared libraries, silently breaking anyone linking against
+#     them.  Most are also the functions -Wmissing-prototypes complains
+#     about; the fix for those is a file-local prototype, not `static`.
+#     Never enable this check without an ABI review.
+#
+#   readability-non-const-parameter    Wants `const` added to pointer
+#     parameters.  Harmless inside a .c file, but its fix-it does not know
+#     which functions are declared in an installed header, and adding const
+#     there changes the published prototype.
+#
+# ---------------------------------------------------------------------------
+# Turned off as noise, with counts from the run that introduced this file
+#
+#   readability-math-missing-parentheses    623.  Wants parentheses around
+#     every * inside a +.  This is a house-style opinion, not a defect
+#     class, and the arithmetic here is conventional.
+#   misc-include-cleaner                    620.  An include-what-you-use
+#     tool.  It flags every transitively-included declaration, including
+#     ones from nifti1_io.h that exist precisely so callers need one header.
+#   readability-inconsistent-ifelse-braces  246.  clang-format owns brace
+#     placement here and is configured with InsertBraces: false.
+#   readability-named-parameter             14.  Omitting parameter names in
+#     a prototype is idiomatic C.
+#   readability-redundant-parentheses       29.  Directly at odds with
+#     bugprone-macro-parentheses, which is enabled and is the one that
+#     catches real defects.
+#
+# ---------------------------------------------------------------------------
+# Notable checks that ARE enabled
+#
+#   bugprone-macro-parentheses              was disabled; re-enabled here.
+#     The macros in nifti_tool.h and the QSTR/NT_FILL families expand their
+#     arguments without parentheses, so any caller passing an expression
+#     gets silent precedence bugs.
+#   bugprone-unchecked-string-to-number-conversion
+#   bugprone-suspicious-realloc-usage        leaks the original block when
+#     realloc returns NULL.
+#   bugprone-misplaced-widening-cast         cast applied after the overflow
+#     rather than before it.
+#   bugprone-multi-level-implicit-pointer-conversion
+#
+# cert-err33-c stays off for now: it flags every unchecked printf and fseek
+# as well as the allocations that matter, which buries the signal.  The
+# allocation cases are covered by clang-analyzer-unix.Malloc instead.
+#
 CheckOptions:
   - key: readability-function-cognitive-complexity.IgnoreMacros
     value: 1
+  # A ratchet, not a target.  Several functions here (nifti_image_read,
+  # nifti_tool's act_* dispatchers) are large by design.  This value is set
+  # just above today's worst so that nothing may get worse; lower it as
+  # functions are split, never raise it.
   - key: readability-function-cognitive-complexity.Threshold
     value: 428
