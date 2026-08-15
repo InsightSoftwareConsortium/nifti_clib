@@ -8359,7 +8359,7 @@ static int unescape_string( char *str )
      } else if( str[ii] == CR ) {  /* is a carriage return */
 
         if( str[ii+1] == LF ){ str[jj] = LF ; ii++ ; nn++ ; }  /* CR LF */
-        else                 { str[jj] = LF ;      ; nn++ ; }  /* CR only */
+        else                 { str[jj] = LF ; nn++ ; }  /* CR only */
 
      } else { /* is a normal character, just copy to output */
 
