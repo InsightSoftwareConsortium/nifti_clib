@@ -4741,7 +4741,10 @@ nifti_image* nifti_convert_n1hdr2nim(nifti_1_header nhdr, const char * fname)
      }
    if( doswap ) {
       if ( g_opts.debug > 3 ) disp_nifti_1_header("-d ni1 pre-swap: ", &nhdr);
-      swap_nifti_header( &nhdr , ni_ver ) ;
+      /* nhdr is a nifti_1_header, so swap it as one.  ni_ver comes from the
+         magic string, and a magic of "n+2" would otherwise have
+         swap_nifti_header() treat these 348 bytes as a 540 byte header. */
+      swap_nifti_header( &nhdr , ni_ver ? 1 : 0 ) ;
    }
 
    if ( g_opts.debug > 2 ) disp_nifti_1_header("-d nhdr2nim : ", &nhdr);
@@ -5364,7 +5367,9 @@ nifti_1_header * nifti_read_n1_hdr(const char * hname, int *swapped, int check)
 
    if( lswap ) {
       if ( g_opts.debug > 3 ) disp_nifti_1_header("-d nhdr pre-swap: ", &nhdr);
-      swap_nifti_header( &nhdr , NIFTI_VERSION(nhdr) ) ;
+      /* only sizeof(nifti_1_header) bytes were read, so swap as that; see
+         the same guard in nifti_convert_n1hdr2nim() */
+      swap_nifti_header( &nhdr , NIFTI_VERSION(nhdr) ? 1 : 0 ) ;
    }
 
    if ( g_opts.debug > 2 ) disp_nifti_1_header("-d nhdr post-swap: ", &nhdr);
