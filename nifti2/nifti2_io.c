@@ -5492,8 +5492,13 @@ nifti_2_header * nifti_read_n2_hdr(const char * hname, int * swapped,
       if( ! nim ) return NULL;
 
       hptr = (nifti_2_header *)malloc(sizeof(nifti_2_header));
+      if( ! hptr ){
+         fprintf(stderr,"** nifti_read_n2_hdr: failed to alloc nifti_2_header\n");
+         nifti_image_free(nim);
+         return NULL;
+      }
       rv = nifti_convert_nim2n2hdr(nim, hptr);
-      free(nim);
+      nifti_image_free(nim);   /* free(nim) leaked nim's filename strings */
 
       if( rv ) { free(hptr); return NULL; }
       return hptr;
