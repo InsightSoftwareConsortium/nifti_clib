@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 #include <nifti2_io.h>
 #include <inttypes.h>
 #include "afni_xml_io.h"
@@ -136,7 +137,8 @@ int axio_num_tokens(const char * str, int64_t maxlen)
       }
    }
 
-   return ntok;
+   if( ntok > INT_MAX ) return -1;
+   return (int)ntok;
 }
 
 
@@ -165,7 +167,7 @@ int axio_show_attrs(FILE * fp, afni_xml_t * ax, int indent)
    if( !ax ) return 1;
 
    for( ind = 0, maxl = 1; ind < ax->attrs.length; ind++ ) {
-      slen = strlen(ax->attrs.name[ind]);
+      slen = (int)strlen(ax->attrs.name[ind]);
       if( slen > maxl ) maxl = slen;
    }
 
@@ -463,6 +465,7 @@ static int dalloc_as_nifti_type(FILE * fp, afni_xml_t * ax, int64_t nvals,
    if( nvals >= 0 ) ntok = nvals;
    else             ntok = axio_num_tokens(ax->xtext, ax->xlen);
 
+   if( ntok < 0 ) return 1;
    if( ntok == 0 ) return 0;  /* nothing to do */
 
    /* -- we know what to do, get to work -- */
