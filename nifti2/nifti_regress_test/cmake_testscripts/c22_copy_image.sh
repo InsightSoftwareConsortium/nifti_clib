@@ -11,6 +11,17 @@ DATA=$2
 OUT_DATA=$(dirname ${DATA}) #Need to write to separate directory
 cd ${OUT_DATA}
 
+# gzip output differs across zlib implementations, so compare decompressed content.
+nii_cmp() {
+    if [ "${1##*.}" = "gz" ]; then
+        rc=0
+        gzip -dc "$1" > "$1.raw" && gzip -dc "$2" > "$2.raw" && cmp "$1.raw" "$2.raw" || rc=1
+        rm -f "$1.raw" "$2.raw"
+        return $rc
+    fi
+    cmp "$1" "$2"
+}
+
 # note the main input file and prefix for all output files
 infile=$DATA/e4.60005.nii.gz
 prefix=out.c22
@@ -42,11 +53,11 @@ ${NT} -copy_image -infile ${prefix}.0.i16.nii.gz \
 ${NT} -copy_image -infile ${prefix}.1.i64.nii.gz   \
                   -prefix ${prefix}.2.0.i16.nii.gz \
                   -convert2dtype NIFTI_TYPE_INT16 -convert_verify
-if cmp ${prefix}.0.i16.nii.gz ${prefix}.2.0.i16.nii.gz
+if nii_cmp ${prefix}.0.i16.nii.gz ${prefix}.2.0.i16.nii.gz
 then
 echo ""
 else
-echo "** not a binary match: ${prefix}.0.i16.nii.gz ${prefix}.2.0.i16.nii.gz"
+echo "** decompressed content differs: ${prefix}.0.i16.nii.gz ${prefix}.2.0.i16.nii.gz"
 exit 1
 fi
 
@@ -57,10 +68,11 @@ ${NT} -cbl -infile ${prefix}.0.i16.nii.gz \
 ${NT} -copy_image -infile ${prefix}.1.f32.nii.gz   \
                   -prefix ${prefix}.2.1.i16.nii.gz \
                   -convert2dtype NIFTI_TYPE_INT16 -convert_fail_choice warn
-if cmp ${prefix}.0.i16.nii.gz ${prefix}.2.1.i16.nii.gz
+if nii_cmp ${prefix}.0.i16.nii.gz ${prefix}.2.1.i16.nii.gz
 then
 echo ""
 else
-echo "** not a binary match: ${prefix}.0.i16.nii.gz ${prefix}.2.1.i16.nii.gz"
+echo "** decompressed content differs: ${prefix}.0.i16.nii.gz ${prefix}.2.1.i16.nii.gz"
+exit 1
 fi
 
