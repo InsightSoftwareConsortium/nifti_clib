@@ -1021,7 +1021,8 @@ static int64_t loc_strnlen(const char * str, int64_t maxlen)
    const char * sptr;
    int64_t      len;
 
-   for( sptr=str, len=0; *sptr && len<maxlen; sptr++, len++)
+   /* test the length first: str need not be terminated within maxlen */
+   for( sptr=str, len=0; len<maxlen && *sptr; sptr++, len++)
       ;
 
    return len;  /* max of maxlen */
