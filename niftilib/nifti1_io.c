@@ -1887,7 +1887,7 @@ float nifti_mat33_colnorm( mat33 A )  /* max column norm of 3x3 matrix */
 *//*--------------------------------------------------------------------*/
 mat33 nifti_mat33_mul( mat33 A , mat33 B )  /* multiply 2 3x3 matrices */
 {
-   mat33 C ; int i,j ;
+   mat33 C = { { { 0.0f } } } ; int i,j ;
    for( i=0 ; i < 3 ; i++ )
     for( j=0 ; j < 3 ; j++ )
       C.m[i][j] =  A.m[i][0] * B.m[0][j]

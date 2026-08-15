@@ -2451,7 +2451,7 @@ float nifti_mat33_colnorm( mat33 A )  /* max column norm of 3x3 matrix */
 nifti_dmat33 nifti_dmat33_mul( nifti_dmat33 A , nifti_dmat33 B )
 /* multiply 2 3x3 matrices */
 {
-   nifti_dmat33 C ; int i,j ;
+   nifti_dmat33 C = { { { 0.0 } } } ; int i,j ;
    for( i=0 ; i < 3 ; i++ )
     for( j=0 ; j < 3 ; j++ )
       C.m[i][j] =  A.m[i][0] * B.m[0][j]
@@ -2465,7 +2465,7 @@ nifti_dmat33 nifti_dmat33_mul( nifti_dmat33 A , nifti_dmat33 B )
 *//*--------------------------------------------------------------------*/
 mat33 nifti_mat33_mul( mat33 A , mat33 B )  /* multiply 2 3x3 matrices */
 {
-   mat33 C ; int i,j ;
+   mat33 C = { { { 0.0f } } } ; int i,j ;
    for( i=0 ; i < 3 ; i++ )
     for( j=0 ; j < 3 ; j++ )
       C.m[i][j] =  A.m[i][0] * B.m[0][j]
@@ -2479,7 +2479,7 @@ mat33 nifti_mat33_mul( mat33 A , mat33 B )  /* multiply 2 3x3 matrices */
 *//*--------------------------------------------------------------------*/
 nifti_dmat44 nifti_dmat44_mul( nifti_dmat44 A , nifti_dmat44 B )
 {
-   nifti_dmat44 C ; int i,j,k ;
+   nifti_dmat44 C = { { { 0.0 } } } ; int i,j,k ;
    for( i=0 ; i < 4 ; i++ )
       for( j=0 ; j < 4 ; j++ ) {
          C.m[i][j] = 0.0;
@@ -2494,7 +2494,7 @@ nifti_dmat44 nifti_dmat44_mul( nifti_dmat44 A , nifti_dmat44 B )
 *//*--------------------------------------------------------------------*/
 mat44 nifti_mat44_mul( mat44 A , mat44 B )
 {
-   mat44 C ; int i,j,k ;
+   mat44 C = { { { 0.0f } } } ; int i,j,k ;
    for( i=0 ; i < 4 ; i++ )
       for( j=0 ; j < 4 ; j++ ) {
          C.m[i][j] = 0.0;

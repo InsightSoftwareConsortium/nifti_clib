@@ -636,7 +636,7 @@ int main (int argc, const char *argv[])
   nifti_datatype_sizes_test(DT_COMPLEX256,32,16);
 
   {
-  mat44 R;
+  mat44 R = { { { 0.0f } } };
   unsigned i,j;
   for(i = 0; i < 4; i++)
     for(j = 0; j < 4; j++)
