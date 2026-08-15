@@ -1,3 +1,6 @@
+/* popen()/pclose() in the PIGZ write path are POSIX, not ISO C11. */
+#define _POSIX_C_SOURCE 200809L
+
 #define NIFTI2_IO_C
 
 #include <assert.h>
