@@ -302,13 +302,17 @@ int znzprintf(znzFile stream, const char *format, ...)
 #ifdef HAVE_ZLIB
   if (stream->zfptr!=NULL) {
     size_t size;  /* local to HAVE_ZLIB block */
-    size = strlen(format) + 1000000;  /* overkill I hope */
+    int written;
+    size = strlen(format) + 1000000;  /* still generous, but now a bound */
     tmpstr = (char *)calloc(1, size);
     if( tmpstr == NULL ){
        fprintf(stderr,"** ERROR: znzprintf failed to alloc %zu bytes\n", size);
+       va_end(va);
        return retval;
     }
-    vsprintf(tmpstr,format,va);
+    written = vsnprintf(tmpstr,size,format,va);
+    if( written < 0 || (size_t)written >= size )
+       fprintf(stderr,"** ERROR: znzprintf output truncated at %zu bytes\n", size-1);
     retval=gzprintf(stream->zfptr,"%s",tmpstr);
     free(tmpstr);
   } else
