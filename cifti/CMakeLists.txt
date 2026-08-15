@@ -42,6 +42,15 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   set_tests_properties( ${TEST_PREFIX}_mim_summary_known_child
                         PROPERTIES PASS_REGULAR_EXPRESSION "BrainModel" )
 
+  # The CIFTI extension is found even when another extension precedes it.
+  add_test( NAME ${TEST_PREFIX}_tool_cext_not_first
+            COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}cifti_tool>
+                    -input ${CMAKE_CURRENT_LIST_DIR}/testdata/cext_second_extension.nii
+                    -disp_cext )
+  set_tests_properties( ${TEST_PREFIX}_tool_cext_not_first
+            PROPERTIES PASS_REGULAR_EXPRESSION "<MapName>demo</MapName>"
+                       FAIL_REGULAR_EXPRESSION "no CIFTI extension" )
+
   # An extension payload that fills esize-8 with no NUL must not be read
   # past its end; the regex pins that the payload is still parsed.
   add_test( NAME ${TEST_PREFIX}_tool_unterminated_cext
