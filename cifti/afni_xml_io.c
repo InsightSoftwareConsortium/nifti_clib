@@ -111,7 +111,7 @@ int axio_text_to_binary(afni_xml_t * ax)
 
 int axio_num_tokens(const char * str, int64_t maxlen)
 {
-   char    * sp = (char *)str;
+   const char * sp = str;
    int64_t   ind, len, ntok;
    int       intok;     /* flag: are we inside a token? */
 
@@ -123,7 +123,7 @@ int axio_num_tokens(const char * str, int64_t maxlen)
 
    ntok = 0;
    intok = 0;
-   for( ind = 0, sp = (char *)str; ind < len; ind++, sp++ ) {
+   for( ind = 0, sp = str; ind < len; ind++, sp++ ) {
       /* just look for state switches */
       if( intok ) {
          if( isspace(*sp) || (*sp == ',') )
@@ -518,7 +518,8 @@ static int can_process_dtype(int dtype)
  * varies, unfortunately */
 static int64_t text_to_i64(int64_t * result, const char * text, int64_t nvals)
 {
-   char    * eptr, * sptr;
+   char       * eptr;
+   const char * sptr;
    int64_t * rptr, val;
    int64_t   nread;
 
@@ -526,7 +527,7 @@ static int64_t text_to_i64(int64_t * result, const char * text, int64_t nvals)
    *result = 0; /* Initialize to zero in case of failure */
    if( nvals <= 0 )        return 0;
 
-   sptr = (char *)text;
+   sptr = text;
 
    nread = 0;
    rptr = result;
@@ -547,14 +548,15 @@ static int64_t text_to_i64(int64_t * result, const char * text, int64_t nvals)
 
 static int64_t text_to_f64(double * result, const char * text, int64_t nvals)
 {
-   char    * eptr, * sptr;
+   char       * eptr;
+   const char * sptr;
    double  * rptr, val;
    int64_t   nread;
 
    if( ! text || ! result) return 1;
    if( nvals <= 0 )        return 0;
 
-   sptr = (char *)text;
+   sptr = text;
 
    nread = 0;
    rptr = result;

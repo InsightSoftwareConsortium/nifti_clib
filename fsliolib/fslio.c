@@ -87,7 +87,6 @@ int FslBaseFileType(int filetype)
 
 int FslGetFileType2(const FSLIO *fslio, int quiet)
 {
-  FSLIO *mutablefslio;
   if (fslio==NULL)  FSLIOERR("FslGetFileType: Null pointer passed for FSLIO");
   if ( (fslio->file_mode==FSL_TYPE_MINC) || (fslio->file_mode==FSL_TYPE_MINC_GZ) ) {
     return fslio->file_mode;
@@ -100,8 +99,7 @@ int FslGetFileType2(const FSLIO *fslio, int quiet)
         fprintf(stderr,"Warning: nifti structure and fsl structure disagree on file type\n");
         fprintf(stderr,"nifti = %d and fslio = %d\n",fslio->niftiptr->nifti_type,fslio->file_mode);
       }
-      mutablefslio = (FSLIO *) fslio;  /* dodgy and will generate warnings */
-      mutablefslio->niftiptr->nifti_type = FslBaseFileType(fslio->file_mode);
+      fslio->niftiptr->nifti_type = FslBaseFileType(fslio->file_mode);
       return fslio->file_mode;
     }
  }
@@ -915,10 +913,11 @@ size_t FslWriteVolumes(FSLIO *fslio, const void *buffer, size_t nvols)
          && (FslGetLeftRightOrder(fslio)==FSL_NEUROLOGICAL) ) {
       /* If it is Analyze and Neurological order then SWAP DATA into Radiological order */
       /* This is nasty - but what else can be done?!? */
-      char *tmpbuf, *inbuf;
+      char *tmpbuf;
+      const char *inbuf;
       long int x, b, n, nrows;
       short nx, ny, nz, nv;
-      inbuf = (char *) buffer;
+      inbuf = buffer;
       tmpbuf = (char *)calloc(nbytes,1);
       FslGetDim(fslio,&nx,&ny,&nz,&nv);
       nrows = nbytes / (nx * bpv);
