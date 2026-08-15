@@ -141,7 +141,7 @@ static int  show_attrs     (afni_xml_control *, const char **, int);
 
 static int64_t      loc_strnlen     (const char * str, int64_t maxlen);
 static afni_xml_t * make_afni_xml   (const char * ename, const char ** attr);
-static char       * strip_whitespace(const char * str, int slen);
+static const char * strip_whitespace(const char * str, int slen);
 
 /*----------------------- main I/O functions ---------------------------*/
 
@@ -888,7 +888,7 @@ static int show_attrs(afni_xml_control * xd, const char ** attr, int showd)
 static void free_whitespace(void) { strip_whitespace(NULL,-2); }
 
 /* if slen == 0, use entire length */
-static char * strip_whitespace(const char * str, int slen)
+static const char * strip_whitespace(const char * str, int slen)
 {
    static char * buf = NULL;
    static int    blen = 0;
@@ -898,18 +898,18 @@ static char * strip_whitespace(const char * str, int slen)
    if(!str && slen == -2){ free(buf); buf=NULL; blen=0; return 0; }
 
    /* if string is long, forget it */
-   if( !str || slen > 1024 ) return (char *)str;
+   if( !str || slen > 1024 ) return str;
 
    len = strlen(str);
    if( slen > 0 && slen < len ) len = slen;
-   if( len <= 0 ) return (char *)str;
+   if( len <= 0 ) return str;
 
    /* make sure we have local space */
    if( len > blen ) { /* allocate a bigger buffer */
       buf = (char *)safe_realloc(buf, (len+1) * sizeof(char));
       if( !buf ) {
          fprintf(stderr,"** failed to alloc wspace buf of len %d\n", len+1);
-         return (char *)str;
+         return str;
       }
       blen = len;
    }
