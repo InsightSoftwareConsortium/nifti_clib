@@ -5019,7 +5019,7 @@ size_t nifti_read_buffer(znzFile fp, void* dataptr, size_t ntot,
   if( dataptr == NULL ){
      if( g_opts.debug > 0 )
         fprintf(stderr,"** ERROR: nifti_read_buffer: NULL dataptr\n");
-     return -1;
+     return 0;
   }
 
   ii = znzread( dataptr , 1 , ntot , fp ) ;             /* data input */
@@ -5034,7 +5034,7 @@ size_t nifti_read_buffer(znzFile fp, void* dataptr, size_t ntot,
                nim->iname , (unsigned int)ntot ,
                (unsigned int)ii , (unsigned int)(ntot-ii) ) ;
     /* memset( (char *)(dataptr)+ii , 0 , ntot-ii ) ;  now failure [rickr] */
-    return -1 ;
+    return 0 ;
   }
 
   if( g_opts.debug > 2 )
