@@ -8752,8 +8752,10 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
    /* scan for opening string */
 
    spos = 0 ;
-   ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ; spos += nn ;
-   if( ii == 0 || strcmp(lhs,"<nifti_image") != 0 ) return NULL ;
+   ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ;
+   if( ii != 1 ) return NULL ;   /* nothing scanned: lhs and nn are unset */
+   spos += nn ;
+   if( strcmp(lhs,"<nifti_image") != 0 ) return NULL ;
 
    /* create empty image struct */
 
@@ -8782,8 +8784,10 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
 
      /* get lhs string */
 
-     ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ; spos += nn ;
-     if( ii == 0 || strcmp(lhs,"/>") == 0 ) break ;  /* end of input? */
+     ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ;
+     if( ii != 1 ) break ;   /* nothing scanned: lhs and nn are unset */
+     spos += nn ;
+     if( strcmp(lhs,"/>") == 0 ) break ;  /* end of input? */
 
      /* skip whitespace and the '=' marker */
 
@@ -8800,8 +8804,9 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
         memcpy(rhs,str+spos+1,nn) ; rhs[nn] = '\0' ;
         spos = (str[ii] == '\'') ? ii+1 : ii ;
      } else {
-        ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ; spos += nn ;
-        if( ii == 0 ) break ;  /* nothing found? */
+        ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ;
+        if( ii != 1 ) break ;  /* nothing found: rhs and nn are unset */
+        spos += nn ;
      }
      unescape_string(rhs) ;  /* remove any XML escape sequences */
 
