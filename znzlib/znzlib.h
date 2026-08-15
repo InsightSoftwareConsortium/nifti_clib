@@ -150,7 +150,13 @@ ZNZ_API int znzputc(int c, znzFile file);
 ZNZ_API int znzgetc(znzFile file);
 
 #if !defined(WIN32)
-ZNZ_API int znzprintf(znzFile stream, const char *format, ...);
+/* checks callers' formats, so the inner vsnprintf passes -Wformat-nonliteral */
+#if defined(__GNUC__) || defined(__clang__)
+#define ZNZ_PRINTF_ATTR __attribute__((format(printf, 2, 3)))
+#else
+#define ZNZ_PRINTF_ATTR
+#endif
+ZNZ_API int znzprintf(znzFile stream, const char *format, ...) ZNZ_PRINTF_ATTR;
 #endif
 #endif
 
