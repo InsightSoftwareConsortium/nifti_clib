@@ -745,8 +745,9 @@ static int epush(afni_xml_control * xd, const char * ename, const char ** attr)
        if( xd->verb > 3 ) show_attrs(xd, attr, 1);
    }
 
-   /* determine whether we should go into a skip block */
-   if( errs ) xd->dskip = xd->depth;
+   /* determine whether we should go into a skip block; keep the outermost
+      such depth, since that is the one whose pop ends the skip */
+   if( errs && ! xd->dskip ) xd->dskip = xd->depth;
 
    /* if we are in a skip block, do nothing but monitor stack */
    if( xd->dskip ) {
@@ -760,12 +761,14 @@ static int epush(afni_xml_control * xd, const char * ename, const char ** attr)
       xd->stack[xd->depth-1] = acur;
 
       /* we have either a root element or a child */
-      if( xd->depth == 1 ) {
-         if( add_to_xroot_list(xd, acur) ) { xd->dskip = xd->depth; return 1; }
-      } else {
-         if( add_to_xchild_list(xd->stack[xd->depth-2], acur) ) {
-            xd->dskip = xd->depth; return 1;
-         }
+      if( xd->depth == 1 ) errs = add_to_xroot_list(xd, acur);
+      else                 errs = add_to_xchild_list(xd->stack[xd->depth-2], acur);
+      if( errs ) {
+         /* acur is in no list, so the skipped pop would never free it */
+         axml_free_xml_t(acur);
+         xd->stack[xd->depth-1] = NULL;
+         xd->dskip = xd->depth;
+         return 1;
       }
    }
 
@@ -778,16 +781,16 @@ static int epop(afni_xml_control * xd, const char * ename)
    if( xd->wkeep ) xd->wkeep = 0; /* clear storage continuation */
 
    if( xd->dskip ) {
-      if( xd->dskip == xd->depth ) xd->dskip = 0;  /* clear */
-
       if( xd->verb > 3 )
           fprintf(stderr,"-- skip=%d, depth=%d, skipping pop element '%s'\n",
                   xd->dskip, xd->depth, ename);
+
+      /* clear only after the element has been skipped, so that the stack
+         is not touched at a depth that was never pushed onto it */
+      if( xd->dskip == xd->depth ) xd->dskip = 0;
    } else {
       process_popped_element(xd, ename);
-   }
 
-   if( ! xd->dskip ) {
       xd->stack[xd->depth-1] = NULL;  /* should be irrelevant */
 
       if( xd->verb > 4 ) {
