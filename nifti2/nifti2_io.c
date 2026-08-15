@@ -990,7 +990,7 @@ static int nifti_load_NBL_bricks( nifti_image * nim , const int64_t * slist,
        } else {
           /* we have already read this sub-brick, just copy the previous one */
           /* note that this works because they are sorted */
-          memcpy(NBL->bricks[idest], NBL->bricks[sindex[c-1]], NBL->bsize);
+          memcpy(NBL->bricks[idest], NBL->bricks[sindex[c-1]], (size_t)(NBL->bsize));
        }
 
        prev = isrc;  /* in any case, note the now previous sub-brick */
@@ -1019,7 +1019,7 @@ static int nifti_alloc_NBL_mem(const nifti_image * nim, int64_t nbricks,
    }
 
    nbl->bsize  = nim->nx * nim->ny * nim->nz * nim->nbyper; /* bytes */
-   nbl->bricks = (void **)malloc(nbl->nbricks * sizeof(void *));
+   nbl->bricks = (void **)malloc((size_t)nbl->nbricks * sizeof(void *));
 
    if( ! nbl->bricks ){
      fprintf(stderr,"** NIFTI NANM: failed to alloc %" PRId64
@@ -1028,7 +1028,7 @@ static int nifti_alloc_NBL_mem(const nifti_image * nim, int64_t nbricks,
    }
 
    for( c = 0; c < nbl->nbricks; c++ ){
-      nbl->bricks[c] = malloc(nbl->bsize);
+      nbl->bricks[c] = malloc((size_t)(nbl->bsize));
       if( ! nbl->bricks[c] ){
          fprintf(stderr,"** NIFTI NANM: failed to alloc %" PRId64
                  " bytes for brick %" PRId64 "\n", nbl->bsize, c);
@@ -1070,8 +1070,8 @@ static int nifti_copynsort(int64_t nbricks, const int64_t *blist,
    int64_t * stmp, * itmp;   /* for ease of typing/reading */
    int64_t   c1, c2, spos, tmp;
 
-   *slist  = (int64_t *)malloc(nbricks * sizeof(int64_t));
-   *sindex = (int64_t *)malloc(nbricks * sizeof(int64_t));
+   *slist  = (int64_t *)malloc((size_t)nbricks * sizeof(int64_t));
+   *sindex = (int64_t *)malloc((size_t)nbricks * sizeof(int64_t));
 
    if( !*slist || !*sindex ){
       fprintf(stderr,"** NIFTI NCS: failed to alloc %" PRId64
@@ -5840,7 +5840,7 @@ void * nifti_read_header( const char *hname, int *nver, int check )
    }
 
    /**- next read into nifti_1_header and determine nifti type */
-   ii = (int)znzread(&n1hdr, 1, h1size, fp);
+   ii = (int)znzread(&n1hdr, 1, (size_t)h1size, fp);
 
    if( ii < (int)h1size ){      /* failure? */
       if( g_opts.debug > 0 ){
@@ -5864,10 +5864,10 @@ void * nifti_read_header( const char *hname, int *nver, int check )
    if ( ni_ver == 2 ) {
       if( g_opts.debug > 2 )
          fprintf(stderr,"-- %s: copying and filling NIFTI-2 header...\n",fname);
-      memcpy(&n2hdr, &n1hdr, h1size);   /* copy first part */
+      memcpy(&n2hdr, &n1hdr, (size_t)h1size);   /* copy first part */
       remain = h2size - h1size;
       posn = (char *)&n2hdr + h1size;
-      ii = (int)znzread(posn, 1, remain, fp); /* read remaining part */
+      ii = (int)znzread(posn, 1, (size_t)remain, fp); /* read remaining part */
       if( ii < (int)remain) {
          LNI_FERR(fname,"short NIFTI-2 header read for file", hfile);
          znzclose(fp);  free(hfile);  return NULL;
@@ -5880,24 +5880,24 @@ void * nifti_read_header( const char *hname, int *nver, int check )
 
    /* allocate header space and return */
    if( ni_ver == 0 || ni_ver == 1 ) {
-      hresult = malloc(h1size);
+      hresult = malloc((size_t)h1size);
       if( ! hresult ) {
          LNI_FERR(fname,"failed to alloc NIFTI-1 header for file", hname);
          return NULL;
       }
-      memcpy(hresult, (void *)&n1hdr, h1size);
+      memcpy(hresult, (void *)&n1hdr, (size_t)h1size);
 
       if ( check && ! nifti_hdr1_looks_good(hresult) ){
          LNI_FERR(fname,"nifti_1_header looks bad for file", hname);
          return hresult;
       }
    } else if ( ni_ver == 2 ) {
-      hresult = malloc(h2size);
+      hresult = malloc((size_t)h2size);
       if( ! hresult ) {
          LNI_FERR(fname,"failed to alloc NIFTI-2 header for file", hname);
          return NULL;
       }
-      memcpy(hresult, &n2hdr, h2size);
+      memcpy(hresult, &n2hdr, (size_t)h2size);
 
       if ( check && ! nifti_hdr2_looks_good(hresult) ){
          LNI_FERR(fname,"nifti_2_header looks bad for file", hname);
@@ -5908,12 +5908,12 @@ void * nifti_read_header( const char *hname, int *nver, int check )
          fprintf(stderr, "** %s: bad nifti header version %d\n", hname, ni_ver);
 
       /* return a nifti-1 header anyway */
-      hresult = malloc(h1size);
+      hresult = malloc((size_t)h1size);
       if( ! hresult ) {
          LNI_FERR(fname,"failed to alloc NIFTI-?? header for file", hname);
          return NULL;
       }
-      memcpy(hresult, (void *)&n1hdr, h1size);
+      memcpy(hresult, (void *)&n1hdr, (size_t)h1size);
    }
 
    if( g_opts.debug > 1 )
@@ -5993,7 +5993,7 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
    h2size = sizeof(nifti_2_header);
 
    /**- next read into nifti_1_header and determine nifti type */
-   ii = (int)znzread(&n1hdr, 1, h1size, fp);
+   ii = (int)znzread(&n1hdr, 1, (size_t)h1size, fp);
 
    if( ii < (int)h1size ){      /* failure? */
       if( g_opts.debug > 0 ){
@@ -6017,10 +6017,10 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       /* fill nifti-2 header and convert */
       if( g_opts.debug > 2 )
          fprintf(stderr,"-- %s: copying and filling NIFTI-2 header...\n",fname);
-      memcpy(&n2hdr, &n1hdr, h1size);   /* copy first part */
+      memcpy(&n2hdr, &n1hdr, (size_t)h1size);   /* copy first part */
       remain = h2size - h1size;
       posn = (char *)&n2hdr + h1size;
-      ii = (int)znzread(posn, 1, remain, fp); /* read remaining part */
+      ii = (int)znzread(posn, 1, (size_t)remain, fp); /* read remaining part */
       if( ii < (int)remain) {
          LNI_FERR(fname,"short NIFTI-2 header read for file", hfile);
          znzclose(fp);  free(hfile);  return NULL;
@@ -6203,12 +6203,12 @@ nifti_image * nifti_read_ascii_image(znzFile fp, const char *fname, int flen,
               fname, slen);
 
    if( slen > 65530 ) slen = 65530 ;
-   sbuf = (char *)calloc(sizeof(char),slen+1) ;
+   sbuf = (char *)calloc(sizeof(char), (size_t)(slen+1)) ;
    if( !sbuf ){
       fprintf(stderr,"** %s: failed to alloc %d bytes for sbuf",lfunc,65530);
       return NULL;
    }
-   znzread( sbuf , 1 , slen , fp ) ;
+   znzread( sbuf , 1 , (size_t)slen, fp ) ;
    nim = nifti_image_from_ascii( sbuf, &txt_size ) ; free( sbuf ) ;
    if( nim == NULL ){
       LNI_FERR(lfunc,"failed nifti_image_from_ascii()",fname);
@@ -6286,7 +6286,7 @@ static int nifti_read_extensions( nifti_image *nim, znzFile fp, int64_t remain )
       return 0;
    }
 
-   count = znzread( extdr.extension, 1, 4, fp ); /* get extender */
+   count = znzread( extdr.extension, 1, (size_t)4, fp ); /* get extender */
 
    if( count < 4 ){
       if( g_opts.debug > 1 )
@@ -6393,12 +6393,12 @@ static int nifti_add_exten_to_list( nifti1_extension *  new_ext,
    nifti1_extension * tmplist;
 
    tmplist = *list;
-   *list = (nifti1_extension *)malloc(new_length * sizeof(nifti1_extension));
+   *list = (nifti1_extension *)malloc((size_t)new_length * sizeof(nifti1_extension));
 
    /* check for failure first */
    if( ! *list ){
       fprintf(stderr,"** NIFTI: failed to alloc %d ext structs (%zu bytes)\n",
-              new_length, new_length*sizeof(nifti1_extension));
+              new_length, (size_t)new_length * sizeof(nifti1_extension));
       if( !tmplist ) return -1;  /* no old list to lose */
 
       *list = tmplist;  /* reset list to old one */
@@ -6407,7 +6407,7 @@ static int nifti_add_exten_to_list( nifti1_extension *  new_ext,
 
    /* if an old list exists, copy the pointers and free the list */
    if( tmplist ){
-      memcpy(*list, tmplist, (new_length-1)*sizeof(nifti1_extension));
+      memcpy(*list, tmplist, (size_t)((new_length-1)*sizeof(nifti1_extension)));
       free(tmplist);
    }
 
@@ -6451,14 +6451,14 @@ static int nifti_fill_extension( nifti1_extension *ext, const char * data,
    ext->esize = esize;
 
    /* allocate esize-8 (maybe more than len), using calloc for fill */
-   ext->edata = (char *)calloc(esize-8, sizeof(char));
+   ext->edata = (char *)calloc((size_t)(esize-8),sizeof(char));
    if( !ext->edata ){
       fprintf(stderr,"** NIFTI NFE: failed to alloc %d bytes for extension\n",
               len);
       return -1;
    }
 
-   memcpy(ext->edata, data, len);  /* copy the data, using len */
+   memcpy(ext->edata, data, (size_t)len);  /* copy the data, using len */
    ext->ecode = ecode;             /* set the ecode */
 
    if( g_opts.debug > 2 )
@@ -6529,14 +6529,14 @@ static int nifti_read_next_extension( nifti1_extension * nex, nifti_image *nim,
    nex->ecode = code;
 
    size -= 8;  /* subtract space for size and code in extension */
-   nex->edata = (char *)malloc(size * sizeof(char));
+   nex->edata = (char *)malloc((size_t)size * sizeof(char));
    if( !nex->edata ){
       fprintf(stderr,"** NIFTI: failed to allocate %d bytes for extension\n",
               size);
       return -1;
    }
 
-   count = (int)znzread(nex->edata, 1, size, fp);
+   count = (int)znzread(nex->edata, 1, (size_t)size, fp);
    if( count < size ){
       if( g_opts.debug > 0 )
          fprintf(stderr,"-d read only %d (of %d) bytes for extension\n",
@@ -6862,7 +6862,7 @@ int nifti_image_load( nifti_image *nim )
 
    if( nim->data == NULL )
    {
-     nim->data = calloc(1,ntot) ;  /* create image memory */
+     nim->data = calloc(1, (size_t)ntot) ;  /* create image memory */
      if( nim->data == NULL ){
         if( g_opts.debug > 0 )
            fprintf(stderr,"** NIFTI: failed to alloc %d bytes for image data\n",
@@ -6914,7 +6914,7 @@ int64_t nifti_read_buffer(znzFile fp, void* dataptr, int64_t ntot,
      return -1;
   }
 
-  ii = znzread( dataptr , 1 , ntot , fp ) ;             /* data input */
+  ii = znzread( dataptr , 1 , (size_t)ntot, fp ) ;             /* data input */
 
   /* if read was short, fail */
   if( ii < ntot ){
@@ -7078,7 +7078,7 @@ int64_t nifti_write_buffer(znzFile fp, const void *buffer, int64_t numbytes)
       fprintf(stderr,"** ERROR: nifti_write_buffer: null file pointer\n");
       return 0;
    }
-   ss = znzwrite( buffer , 1 , numbytes , fp ) ;
+   ss = znzwrite( buffer , 1 , (size_t)numbytes, fp ) ;
    return ss;
 }
 
@@ -7442,7 +7442,7 @@ nifti_image * nifti_make_new_nim(const int64_t dims[8], int datatype,
       fprintf(stderr,"+d nifti_make_new_nim, data_fill = %d\n",data_fill);
 
    if( data_fill ) {
-      nim->data = calloc(nim->nvox, nim->nbyper);
+      nim->data = calloc((size_t)(nim->nvox), (size_t)(nim->nbyper));
 
       /* if we cannot allocate data, take ball and go home */
       if( !nim->data ) {
@@ -7755,8 +7755,8 @@ int nifti_copy_extensions(nifti_image * nim_dest, const nifti_image * nim_src)
 
    if( nim_src->num_ext <= 0 ) return 0;
 
-   bytes = nim_src->num_ext * sizeof(nifti1_extension);  /* I'm lazy */
-   nim_dest->ext_list = (nifti1_extension *)malloc(bytes);
+   bytes = (size_t)nim_src->num_ext * sizeof(nifti1_extension);  /* I'm lazy */
+   nim_dest->ext_list = (nifti1_extension *)malloc((size_t)bytes);
    if( !nim_dest->ext_list ){
       fprintf(stderr,"** failed to allocate %d nifti1_extension structs\n",
               nim_src->num_ext);
@@ -7772,7 +7772,7 @@ int nifti_copy_extensions(nifti_image * nim_dest, const nifti_image * nim_src)
          fprintf(stderr,"+d dup'ing ext #%d of size %d (from size %d)\n",
                  c, size, old_size);
       /* data length is size-8, as esize includes space for esize and ecode */
-      data = (char *)calloc(size-8,sizeof(char));      /* maybe size > old */
+      data = (char *)calloc((size_t)(size-8),sizeof(char));      /* maybe size > old */
       if( !data ){
          fprintf(stderr,"** NIFTI: failed to alloc %d bytes for extension\n",
                  size);
@@ -7784,7 +7784,7 @@ int nifti_copy_extensions(nifti_image * nim_dest, const nifti_image * nim_src)
       nim_dest->ext_list[c].esize = size;
       nim_dest->ext_list[c].ecode = nim_src->ext_list[c].ecode;
       nim_dest->ext_list[c].edata = data;
-      memcpy(data, nim_src->ext_list[c].edata, old_size-8);
+      memcpy(data, nim_src->ext_list[c].edata, (size_t)(old_size-8));
 
       nim_dest->num_ext++;
    }
@@ -8123,8 +8123,8 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
 
    /* write the header and extensions */
 
-   if( nver == 2 ) ss = znzwrite(&n2hdr , 1 , hsize , fp); /* write header */
-   else            ss = znzwrite(&n1hdr , 1 , hsize , fp); /* write header */
+   if( nver == 2 ) ss = znzwrite(&n2hdr , 1 , (size_t)hsize, fp); /* write header */
+   else            ss = znzwrite(&n1hdr , 1 , (size_t)hsize, fp); /* write header */
 
    if( ss < hsize ){
       LNI_FERR(func,"bad header write to output file",nim->fname);
@@ -8470,7 +8470,7 @@ static char *escapize_string( const char * str )
        default: lout++ ; break ;      /* copy all other chars */
      }
    }
-   out = (char *)calloc(1,lout) ;     /* allocate output string */
+   out = (char *)calloc(1, (size_t)lout) ;     /* allocate output string */
    if( !out ){
       fprintf(stderr,"** NIFTI escapize_string: failed to alloc %d bytes\n",
               lout);
@@ -8747,7 +8747,7 @@ char *nifti_image_to_ascii( const nifti_image *nim )
    snprintf( buf+strlen(buf) , bufLen-strlen(buf) , "/>\n" ) ;   /* XML-ish closer */
 
    nbuf = (int)strlen(buf) ;
-   newbuf = (char *)realloc((void *)buf, nbuf+1); /* cut back to proper length */
+   newbuf = (char *)realloc((void *)buf, (size_t)(nbuf+1)); /* cut back to proper length */
    if( !newbuf ){
       free(buf);
       fprintf(stderr,"** NIFTI NITA: failed to realloc %d bytes\n",nbuf+1);
@@ -8863,7 +8863,7 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
         ii = spos+1 ;
         while( str[ii] != '\0' && str[ii] != '\'' ) ii++ ;
         nn = ii-spos-1 ; if( nn > 1023 ) nn = 1023 ;
-        memcpy(rhs,str+spos+1,nn) ; rhs[nn] = '\0' ;
+        memcpy(rhs,str+spos+1, (size_t)nn) ; rhs[nn] = '\0' ;
         spos = (str[ii] == '\'') ? ii+1 : ii ;
      } else {
         ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ;
@@ -9385,7 +9385,7 @@ int64_t nifti_read_subregion_image( nifti_image * nim,
   for(i = 0; i < nim->ndim; i++) total_alloc_size *= region_size[i];
 
   /* allocate buffer, if necessary */
-  if(! *data) *data = malloc(total_alloc_size);
+  if(! *data) *data = malloc((size_t)total_alloc_size);
 
   if(! *data) {
     if(g_opts.debug > 1)
@@ -9560,7 +9560,7 @@ static int rci_alloc_mem(void **data, const int64_t prods[8], int nprods, int nb
                  " (%" PRId64 " x %d) bytes for collapsed image\n",
                  size, size/nbyper, nbyper);
 
-      *data = malloc(size);   /* actually allocate the memory */
+      *data = malloc((size_t)size);   /* actually allocate the memory */
       if( ! *data ){
         fprintf(stderr,"** NIFTI rci_am: failed to alloc %" PRId64
                 " bytes for data\n", size);
@@ -9718,7 +9718,7 @@ int64_t * nifti_get_int64list( int64_t nvals , const char * str )
 
       if( str[ipos] == ',' || ISEND(str[ipos]) ){
          nout++ ;
-         subv_realloc = (int64_t *)realloc( (char *)subv , sizeof(int64_t)*(nout+1) ) ;
+         subv_realloc = (int64_t *)realloc( (char *)subv , (size_t)(sizeof(int64_t)*(nout+1))) ;
          if( !subv_realloc ) {
             free(subv);
             fprintf(stderr,"** nifti_get_intlist: failed realloc of %" PRId64
@@ -9800,7 +9800,7 @@ int64_t * nifti_get_int64list( int64_t nvals , const char * str )
 
       for( ii=ibot ; (ii-itop)*istep <= 0 ; ii += istep ){
          nout++ ;
-         subv_realloc = (int64_t *)realloc( (char *)subv , sizeof(int64_t)*(nout+1) ) ;
+         subv_realloc = (int64_t *)realloc( (char *)subv , (size_t)(sizeof(int64_t)*(nout+1))) ;
          if( !subv_realloc ) {
             free(subv);
             fprintf(stderr,"** nifti_get_intlist: failed realloc of %" PRId64
@@ -9851,7 +9851,7 @@ int * nifti_get_intlist( int nvals , const char * str )
    }
 
    /* have a valid result, copy as ints */
-   ilist = (int *)malloc((nints+1) * sizeof(int));
+   ilist = (int *)malloc((size_t)((nints+1) * sizeof(int)));
    if( !ilist ) {
       fprintf(stderr,"** nifti_get_intlist: failed to alloc %" PRId64 " ints\n",
               nints);
