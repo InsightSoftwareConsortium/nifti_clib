@@ -211,7 +211,7 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
 
       if(xd->verb > 4) fprintf(stderr,"-- XML_Parse # %d\n", pcount);
       pcount++;
-      if( XML_Parse(parser, buf, blen, done) == XML_STATUS_ERROR) {
+      if( XML_Parse(parser, buf, (int)blen, done) == XML_STATUS_ERROR) {
           fprintf(stderr,"** %s at line %u\n",
                   XML_ErrorString(XML_GetErrorCode(parser)),
                   (unsigned int)XML_GetCurrentLineNumber(parser));
@@ -299,7 +299,7 @@ afni_xml_list axml_read_buf(const char * buf_in, int64_t bin_len)
 
         if(xd->verb > 4) fprintf(stderr,"-- XML_Parse # %d\n", pcount);
         pcount++;
-        if( XML_Parse(parser, buf, blen, done) == XML_STATUS_ERROR) {
+        if( XML_Parse(parser, buf, (int)blen, done) == XML_STATUS_ERROR) {
             fprintf(stderr,"** %s at line %u\n",
                     XML_ErrorString(XML_GetErrorCode(parser)),
                     (unsigned int)XML_GetCurrentLineNumber(parser));

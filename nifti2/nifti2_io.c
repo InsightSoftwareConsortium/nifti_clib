@@ -6286,7 +6286,7 @@ static int nifti_read_extensions( nifti_image *nim, znzFile fp, int64_t remain )
       return 0;
    }
 
-   count = znzread( extdr.extension, 1, (size_t)4, fp ); /* get extender */
+   count = (int64_t)znzread( extdr.extension, 1, (size_t)4, fp ); /* get extender */
 
    if( count < 4 ){
       if( g_opts.debug > 1 )
@@ -6905,7 +6905,7 @@ int64_t nifti_read_buffer(znzFile fp, void* dataptr, int64_t ntot,
      return -1;
   }
 
-  ii = znzread( dataptr , 1 , (size_t)ntot, fp ) ;             /* data input */
+  ii = (int64_t)znzread( dataptr , 1 , (size_t)ntot, fp ) ;             /* data input */
 
   /* if read was short, fail */
   if( ii < ntot ){
@@ -7069,7 +7069,7 @@ int64_t nifti_write_buffer(znzFile fp, const void *buffer, int64_t numbytes)
       fprintf(stderr,"** ERROR: nifti_write_buffer: null file pointer\n");
       return 0;
    }
-   ss = znzwrite( buffer , 1 , (size_t)numbytes, fp ) ;
+   ss = (int64_t)znzwrite( buffer , 1 , (size_t)numbytes, fp ) ;
    return ss;
 }
 
@@ -7746,7 +7746,7 @@ int nifti_copy_extensions(nifti_image * nim_dest, const nifti_image * nim_src)
 
    if( nim_src->num_ext <= 0 ) return 0;
 
-   bytes = (size_t)nim_src->num_ext * sizeof(nifti1_extension);  /* I'm lazy */
+   bytes = nim_src->num_ext * (int64_t)sizeof(nifti1_extension);  /* I'm lazy */
    nim_dest->ext_list = (nifti1_extension *)malloc((size_t)bytes);
    if( !nim_dest->ext_list ){
       fprintf(stderr,"** failed to allocate %d nifti1_extension structs\n",
@@ -9704,7 +9704,7 @@ int64_t * nifti_get_int64list( int64_t nvals , const char * str )
 
       if( str[ipos] == ',' || ISEND(str[ipos]) ){
          nout++ ;
-         subv_realloc = (int64_t *)realloc( (char *)subv , (size_t)(sizeof(int64_t)*(nout+1))) ;
+         subv_realloc = (int64_t *)realloc( (char *)subv , sizeof(int64_t)*(size_t)(nout+1)) ;
          if( !subv_realloc ) {
             free(subv);
             fprintf(stderr,"** nifti_get_intlist: failed realloc of %" PRId64
@@ -9786,7 +9786,7 @@ int64_t * nifti_get_int64list( int64_t nvals , const char * str )
 
       for( ii=ibot ; (ii-itop)*istep <= 0 ; ii += istep ){
          nout++ ;
-         subv_realloc = (int64_t *)realloc( (char *)subv , (size_t)(sizeof(int64_t)*(nout+1))) ;
+         subv_realloc = (int64_t *)realloc( (char *)subv , sizeof(int64_t)*(size_t)(nout+1)) ;
          if( !subv_realloc ) {
             free(subv);
             fprintf(stderr,"** nifti_get_intlist: failed realloc of %" PRId64
@@ -9837,7 +9837,7 @@ int * nifti_get_intlist( int nvals , const char * str )
    }
 
    /* have a valid result, copy as ints */
-   ilist = (int *)malloc((size_t)((nints+1) * sizeof(int)));
+   ilist = (int *)malloc((size_t)(nints+1) * sizeof(int));
    if( !ilist ) {
       fprintf(stderr,"** nifti_get_intlist: failed to alloc %" PRId64 " ints\n",
               nints);
