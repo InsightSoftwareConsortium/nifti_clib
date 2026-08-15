@@ -184,7 +184,7 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
       if(TEST_INSTALL)
         add_test(
           NAME install_linking
-          COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/install_linking_test.sh ${CMAKE_MAKE_PROGRAM}
+          COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/install_linking_test.sh ${CMAKE_MAKE_PROGRAM} ${CMAKE_SOURCE_DIR}
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR} )
       endif()
   endif()
