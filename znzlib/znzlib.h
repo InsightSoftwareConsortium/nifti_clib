@@ -130,8 +130,10 @@ ZNZ_API znzFile znzdopen(int fd, const char *mode, int use_compression);
 
 ZNZ_API int Xznzclose(znzFile * file);
 
+/* returns members read, as fread does; 0 on error */
 ZNZ_API size_t znzread(void* buf, size_t size, size_t nmemb, znzFile file);
 
+/* returns members written, as fwrite does; 0 on error */
 ZNZ_API size_t znzwrite(const void* buf, size_t size, size_t nmemb, znzFile file);
 
 ZNZ_API znz_off_t znzseek(znzFile file, znz_off_t offset, int whence);
