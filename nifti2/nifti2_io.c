@@ -478,9 +478,9 @@ int nifti_fileexists(const char* fname);
 /* prototypes for internal functions - not part of exported library          */
 
 /* extension routines */
-static int  nifti_read_extensions(nifti_image *nim, znzFile fp, int64_t remain);
-static int  nifti_read_next_extension( nifti1_extension * nex, nifti_image *nim,                                       int remain, znzFile fp );
-static int  nifti_check_extension(nifti_image *nim, int size,int code, int rem);
+static int64_t  nifti_read_extensions(nifti_image *nim, znzFile fp, int64_t remain);
+static int  nifti_read_next_extension( nifti1_extension * nex, nifti_image *nim,                                       int64_t remain, znzFile fp );
+static int  nifti_check_extension(nifti_image *nim, int size,int code, int64_t rem);
 static void update_nifti_image_for_brick_list(nifti_image * nim,
                                               int64_t nbricks);
 static int  nifti_add_exten_to_list(nifti1_extension *  new_ext,
@@ -503,7 +503,7 @@ static int  nifti_NBL_matches_nim(const nifti_image *nim,
 static int  rci_read_data(nifti_image *nim, int64_t *pivots, int64_t *prods,
                           int nprods, const int64_t dims[], char *data,
                           znzFile fp, int64_t base_offset);
-static int rci_alloc_mem(void **data, const int64_t prods[8], int nprods, int nbyper);
+static int64_t rci_alloc_mem(void **data, const int64_t prods[8], int nprods, int nbyper);
 static int  make_pivot_list(nifti_image * nim, const int64_t dims[8],
                             int64_t pivots[8], int64_t prods[8], int * nprods );
 
@@ -886,7 +886,8 @@ int nifti_image_load_bricks( nifti_image * nim , int64_t nbricks,
 
    znzclose(fp);
 
-   return NBL->nbricks;
+   /* the count came from the caller, who passed it as this many bricks */
+   return (int)NBL->nbricks;
 }
 
 
@@ -5983,7 +5984,7 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       return NULL;
    }
    else if ( rv == 1 ) { /* process special file type */
-      nim = nifti_read_ascii_image( fp, hfile, filesize, read_data );
+      nim = nifti_read_ascii_image( fp, hfile, (int)filesize, read_data );
       znzclose(fp);
       free(hfile);
       return nim;
@@ -6251,7 +6252,7 @@ nifti_image * nifti_read_ascii_image(znzFile fp, const char *fname, int flen,
  *
  * return the number of extensions read in, or < 0 on error
  *----------------------------------------------------------------------*/
-static int nifti_read_extensions( nifti_image *nim, znzFile fp, int64_t remain )
+static int64_t nifti_read_extensions( nifti_image *nim, znzFile fp, int64_t remain )
 {
    nifti1_extender    extdr;      /* defines extension existence  */
    nifti1_extension   extn;       /* single extension to process  */
@@ -6479,7 +6480,7 @@ static int nifti_fill_extension( nifti1_extension *ext, const char * data,
  *     error        : -1
  *----------------------------------------------------------------------*/
 static int nifti_read_next_extension( nifti1_extension * nex, nifti_image *nim,
-                                      int remain, znzFile fp )
+                                      int64_t remain, znzFile fp )
 {
    int swap = nim->byteorder != nifti_short_order();
    int count, size, code = -1;
@@ -6490,7 +6491,7 @@ static int nifti_read_next_extension( nifti1_extension * nex, nifti_image *nim,
 
    if( remain < 16 ){
       if( g_opts.debug > 2 )
-         fprintf(stderr,"-d only %d bytes remain, so no extension\n", remain);
+         fprintf(stderr,"-d only %" PRId64 " bytes remain, so no extension\n", remain);
       return 0;
    }
 
@@ -6696,7 +6697,7 @@ int nifti_is_valid_ecode( int ecode )
 /*----------------------------------------------------------------------
  * check for valid size and code, as well as can be done
  *----------------------------------------------------------------------*/
-static int nifti_check_extension(nifti_image *nim, int size, int code, int rem)
+static int nifti_check_extension(nifti_image *nim, int size, int code, int64_t rem)
 {
    /* check for bad code before bad size */
    if( ! nifti_is_valid_ecode(code) ) {
@@ -6713,7 +6714,7 @@ static int nifti_check_extension(nifti_image *nim, int size, int code, int rem)
 
    if( size > rem ){
       if( g_opts.debug > 2 )
-         fprintf(stderr,"-d ext size %d, space %d, no extension\n", size, rem);
+         fprintf(stderr,"-d ext size %d, space %" PRId64 ", no extension\n", size, rem);
       return 0;
    }
 
@@ -9525,7 +9526,7 @@ static int rci_read_data(nifti_image * nim, int64_t * pivots, int64_t * prods,
 
    return total size on success, and < 0 on failure
 */
-static int rci_alloc_mem(void **data, const int64_t prods[8], int nprods, int nbyper )
+static int64_t rci_alloc_mem(void **data, const int64_t prods[8], int nprods, int nbyper )
 {
    int64_t size;
    int     memindex;
