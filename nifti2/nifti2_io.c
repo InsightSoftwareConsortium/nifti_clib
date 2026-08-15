@@ -6561,8 +6561,8 @@ int valid_nifti_extensions(const nifti_image * nim)
        \return -1 on error, else NIFTI version
  *//*--------------------------------------------------------------------*/
 int nifti_header_version(const char * buf, size_t nbytes){
-   const nifti_1_header *n1p = (const nifti_1_header *)buf;
-   const nifti_2_header *n2p = (const nifti_2_header *)buf;
+   nifti_1_header n1hdr;
+   nifti_2_header n2hdr;
    char            fname[] = { "nifti_header_version" };
    int             sizeof_hdr, sver, nver;
 
@@ -6578,9 +6578,18 @@ int nifti_header_version(const char * buf, size_t nbytes){
       return -1;
    }
 
+   /* buf comes straight from a file read and need not satisfy the alignment
+      either header struct requires, so work from aligned copies rather than
+      casting it.  Only sizeof(nifti_1_header) bytes are guaranteed present,
+      and both sizeof_hdr and magic fall inside that range for either
+      version, so copy exactly that much into each. */
+   memcpy(&n1hdr, buf, sizeof(n1hdr));
+   memset(&n2hdr, 0, sizeof(n2hdr));
+   memcpy(&n2hdr, buf, sizeof(n1hdr));
+
    /* try to determine the version based on sizeof_hdr */
    sver = -1;
-   sizeof_hdr = n1p->sizeof_hdr;
+   sizeof_hdr = n1hdr.sizeof_hdr;
    if     ( sizeof_hdr == (int)sizeof(nifti_1_header) ) sver = 1;
    else if( sizeof_hdr == (int)sizeof(nifti_2_header) ) sver = 2;
    else { /* try swapping */
@@ -6590,8 +6599,8 @@ int nifti_header_version(const char * buf, size_t nbytes){
    }
 
    /* and check magic field */
-   if      ( sver == 1 ) nver = NIFTI_VERSION(*n1p);
-   else if ( sver == 2 ) nver = NIFTI_VERSION(*n2p);
+   if      ( sver == 1 ) nver = NIFTI_VERSION(n1hdr);
+   else if ( sver == 2 ) nver = NIFTI_VERSION(n2hdr);
    else                  nver = -1;
 
    /* now compare and return */
@@ -6600,24 +6609,24 @@ int nifti_header_version(const char * buf, size_t nbytes){
       fprintf(stderr,"-- %s: size ver = %d, ni ver = %d\n", fname, sver, nver);
 
    if( sver == 1 ) {
-      nver = NIFTI_VERSION(*n1p);
+      nver = NIFTI_VERSION(n1hdr);
       if( nver == 0 ) return 0;        /* ANALYZE */
       if( nver == 1 ) return 1;        /* NIFTI-1 */
       if( g_opts.debug > 1 )
-         fprintf(stderr,"** %s: bad NIFTI-1 magic= %.4s", fname, n1p->magic);
+         fprintf(stderr,"** %s: bad NIFTI-1 magic= %.4s", fname, n1hdr.magic);
       return -1;
    } else if ( sver == 2 ) {
-      nver = NIFTI_VERSION(*n2p);
+      nver = NIFTI_VERSION(n2hdr);
       if( nver == 2 ) return 2;        /* NIFTI-2 */
       if( g_opts.debug > 1 )
-         fprintf(stderr,"** %s: bad NIFTI-2 magic4= %.4s", fname, n2p->magic);
+         fprintf(stderr,"** %s: bad NIFTI-2 magic4= %.4s", fname, n2hdr.magic);
       return -1;
    }
 
    /* failure */
 
    if( g_opts.debug > 0 )
-      fprintf(stderr,"** %s: bad sizeof_hdr = %d\n", fname, n1p->sizeof_hdr);
+      fprintf(stderr,"** %s: bad sizeof_hdr = %d\n", fname, n1hdr.sizeof_hdr);
 
    return -1;
 }
