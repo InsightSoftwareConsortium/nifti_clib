@@ -5033,6 +5033,14 @@ nifti_image* nifti_convert_n2hdr2nim(nifti_2_header nhdr, const char * fname)
      ERREX("bad datatype") ;
    }
 
+   /* dim[0] is the number of dimensions and the loops below index dim[]
+      with it; the NIFTI-1 path gets this check from need_nhdr_swap() */
+   if( nhdr.dim[0] < 0 || nhdr.dim[0] > 7 )
+   {
+     free(nim);
+     ERREX("bad dim[0]") ;
+   }
+
    if( nhdr.dim[1] <= 0 )
    {
      free(nim);
