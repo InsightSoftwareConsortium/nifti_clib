@@ -10,6 +10,13 @@ else
     export BUILD_TOOL=$1
 fi
 
+if [ $# -lt 2 ]
+then
+    echo Missing source directory
+    exit 1
+fi
+SRC_DIR=$2
+
 # Set variables for local install
 export DESTDIR=installed
 export PATH="$PWD/$DESTDIR/usr/local/bin:$PATH"
@@ -28,7 +35,7 @@ cd downstream_example
 cmake \
     -G 'Unix Makefiles' \
     -DCMAKE_MODULE_PATH=../installed/usr/local/share \
-     ../../nifti_clib/real_easy/minimal_example_of_downstream_usage
+    "${SRC_DIR}/real_easy/minimal_example_of_downstream_usage"
 make
 
 echo Success
