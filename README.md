@@ -85,10 +85,65 @@ packaging   | spec file for building RPMs, and template package description for 
 
 ## Instructions to build
 
-command     |  description
-------------|-------------
-"make all"  | results will be left in the directories: bin/ include/ lib/
-"make help" | will show more build options
+The project builds with CMake:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+```
+
+Useful options: `-DBUILD_SHARED_LIBS=ON`, `-DUSE_CIFTI_CODE=ON` (needs
+expat), `-DUSE_FSL_CODE=ON`, and `-DDOWNLOAD_TEST_DATA=OFF` together with
+`ctest -LE NEEDS_DATA` for a build with no network access.
+
+The top-level GNU `Makefile` still exists and still mostly works, but it
+is not maintained and does not build the nifti2 or cifti libraries.
+
+## Checking the code
+
+The sanitizers are the quickest memory check:
+
+```sh
+cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all" \
+      -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+cmake --build build-asan -j && ctest --test-dir build-asan --output-on-failure
+```
+
+For valgrind:
+
+```sh
+ctest --test-dir build -T memcheck -E install_linking \
+      --overwrite MemoryCheckCommandOptions="--trace-children=yes --leak-check=full"
+```
+
+`--trace-children=yes` matters: many of the tests are shell scripts that
+exec the tools, so without it valgrind only ever inspects the shell and
+reports a clean run.  `install_linking` is excluded because it configures
+and builds a whole CMake project, and tracing cmake and the compiler
+through valgrind takes far longer than it is worth.
+
+`ctest -T memcheck` exits 0 even when valgrind reports defects, so read
+`build/Testing/Temporary/MemoryChecker.*.log` rather than trusting the
+exit status.
+
+Note that valgrind needs the C library's debug symbols and refuses to
+start without them.  Distributions that ship a stripped `ld.so` and no
+debuginfo package for it -- Arch and its derivatives among them -- cannot
+run it at all, and `DEBUGINFOD_URLS` does not help, because those builds
+are not published to any debuginfod server.  Run it in a container
+instead:
+
+```sh
+docker run --rm -v "$PWD":/src:ro -w /work ubuntu:24.04 bash -c '
+  apt-get update && apt-get install -y build-essential cmake ninja-build \
+      valgrind libc6-dbg zlib1g-dev libexpat1-dev
+  cmake -S /src -B /work/build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+  cmake --build /work/build -j
+  ctest --test-dir /work/build -T memcheck -E install_linking \
+        --overwrite MemoryCheckCommandOptions="--trace-children=yes --leak-check=full"'
+```
 
 ![NIFTI ICON](https://avatars0.githubusercontent.com/u/45666806?s=200&v=4)
 
