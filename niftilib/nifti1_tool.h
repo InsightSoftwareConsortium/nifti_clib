@@ -88,8 +88,8 @@ typedef struct {
 /* call fill_field() for a single type, name and number of elements */
 /* nstr is the base struct, and fldp is a field pointer */
 #define NT_FILL(nstr,fldp,type,name,num,rv) do{                      \
-           rv=fill_field(fldp,type,offsetof(nstr,name),num,#name);   \
-           fldp++; } while (0)
+           (rv)=fill_field(fldp,type,offsetof(nstr,name),num,#name); \
+           (fldp)++; } while (0)
 
 #define NT_MAKE_IM_NAME "MAKE_IM"
 
