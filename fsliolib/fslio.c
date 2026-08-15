@@ -1225,8 +1225,11 @@ void FslSetDim(FSLIO *fslio, short x, short y, short z, short v)
     fslio->niftiptr->dim[6] = fslio->niftiptr->nv;
     fslio->niftiptr->dim[7] = fslio->niftiptr->nw;
 
-    fslio->niftiptr->nvox =  fslio->niftiptr->nx * fslio->niftiptr->ny * fslio->niftiptr->nz
-      * fslio->niftiptr->nt * fslio->niftiptr->nu * fslio->niftiptr->nv * fslio->niftiptr->nw ;
+    fslio->niftiptr->nvox =
+        (size_t)fslio->niftiptr->nx * (size_t)fslio->niftiptr->ny
+      * (size_t)fslio->niftiptr->nz * (size_t)fslio->niftiptr->nt
+      * (size_t)fslio->niftiptr->nu * (size_t)fslio->niftiptr->nv
+      * (size_t)fslio->niftiptr->nw ;
 
   }
   if (fslio->mincptr!=NULL) {
@@ -2419,16 +2422,16 @@ double ****d4matrix(int th, int zh,  int yh, int xh)
         if (!t) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers to slices */
-        t[0]=(double ***) malloc((size_t)nvol*(size_t)((nslice)*sizeof(double**)));
+        t[0]=(double ***) malloc((size_t)nvol*(size_t)nslice*sizeof(double**));
         if (!t[0]) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers for ydim */
-        t[0][0]=(double **) malloc((size_t)nvol*(size_t)((nslice*nrow)*sizeof(double*)));
+        t[0][0]=(double **) malloc((size_t)nvol*(size_t)nslice*(size_t)nrow*sizeof(double*));
         if (!t[0][0]) FSLIOERR("d4matrix: allocation failure");
 
 
         /** allocate the data blob */
-        t[0][0][0]=(double *) malloc((size_t)nvol*(size_t)((nslice*nrow*ncol)*sizeof(double)));
+        t[0][0][0]=(double *) malloc((size_t)nvol*(size_t)nslice*(size_t)nrow*(size_t)ncol*sizeof(double));
         if (!t[0][0][0]) FSLIOERR("d4matrix: allocation failure");
 
 

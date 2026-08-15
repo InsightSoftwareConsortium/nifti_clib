@@ -2980,8 +2980,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               { const int16_t sval = (int16_t)val;
-                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(sval), &sval,sizeof(sval)); }
+               ((short *)((char *)basep + field->offset))[fc] = (short)val;
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3000,8 +2999,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                           fc,field->len);
                   return 1;
                }
-               { const int32_t ival = (int32_t)val;
-                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(ival), &ival,sizeof(ival)); }
+               ((int *)((char *)basep + field->offset))[fc] = val;
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3021,7 +3019,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(fval), &fval,sizeof(fval));
+               ((float *)((char *)basep + field->offset))[fc] = fval;
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %f\n",
                           fc, field->name, fval);
@@ -3480,7 +3478,7 @@ int disp_field( const char *mesg, field_s *fieldp, void * str, int nfields, int 
             int    len;
 
             /* start by sucking the pointer stored here */
-            memcpy(&sp, (const char *)str + fp->offset, sizeof(sp));
+            sp = *(char **)((char *)str + fp->offset);
 
             if( ! sp ){ fprintf(stdout,"(NULL)\n");  break; }  /* anything? */
 
@@ -3494,9 +3492,7 @@ int disp_field( const char *mesg, field_s *fieldp, void * str, int nfields, int 
             else if( *sp && !isprint(*sp) )  /* if no termination, it's bad */
                fprintf(stdout,"(non-printable string)\n");
             else  /* woohoo!  a good string */
-               { char * cp;
-                  memcpy(&cp, (const char *)str + fp->offset, sizeof(cp));
-                  fprintf(stdout,"'%.40s'\n", cp); }
+               fprintf(stdout,"'%.40s'\n",*(char **)((char *)str + fp->offset));
             break;
          }
 
@@ -3505,7 +3501,7 @@ int disp_field( const char *mesg, field_s *fieldp, void * str, int nfields, int 
             nifti1_extension * extp;
 
             /* yank the address sitting there into extp */
-            memcpy(&extp, (const char *)str + fp->offset, sizeof(extp));
+            extp = *(nifti1_extension **)((char *)str + fp->offset);
 
             /* the user may use -disp_exts to display all of them */
             if( extp ) disp_nifti1_extension(NULL, extp, 6);
@@ -3564,8 +3560,8 @@ int diff_field(field_s *fieldp, void * str0, void * str1, int nfields)
          {
             nifti1_extension * ext0, * ext1;
 
-            memcpy(&ext0, (const char *)str0 + fp->offset, sizeof(ext0));
-            memcpy(&ext1, (const char *)str1 + fp->offset, sizeof(ext1));
+            ext0 = *(nifti1_extension **)((char *)str0 + fp->offset);
+            ext1 = *(nifti1_extension **)((char *)str1 + fp->offset);
 
             if( ! ext0 && ! ext1 ) break;     /* continue on */
 
@@ -4274,7 +4270,8 @@ nifti_image * nt_read_bricks(nt_opts * opts, const char * fname, int len, int * 
 
     /* now populate NBL (can be based only on len and nim) */
     NBL->nbricks = len;
-    NBL->bsize = (size_t)nim->nbyper * nim->nx * nim->ny * nim->nz;
+    NBL->bsize = (size_t)nim->nbyper * (size_t)nim->nx
+                * (size_t)nim->ny * (size_t)nim->nz;
     NBL->bricks = (void **)calloc((size_t)(NBL->nbricks), (size_t)(sizeof(void *)));
     if( !NBL->bricks ){
         fprintf(stderr,"** NRB: failed to alloc %d pointers\n",NBL->nbricks);
