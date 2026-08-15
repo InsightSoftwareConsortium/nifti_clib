@@ -43,7 +43,7 @@ static int  check_for_multiple_filenames(const char* filename);
 static int FslIgnoreMFQ=0;
 static int FslOverrideOutputType=-1;
 
-#define FSLIOERR(x) { fprintf(stderr,"Error:: %s\n",(x)); fflush(stderr); exit(EXIT_FAILURE); }
+#define FSLIOERR(x) do { fprintf(stderr,"Error:: %s\n",(x)); fflush(stderr); exit(EXIT_FAILURE); } while(0)
 
 
 /************************************************************
@@ -1992,7 +1992,7 @@ int FslClose(FSLIO *fslio)
       fprintf(stderr,"Error:: Could not write origin data to header file %s.\n",
               fslio->niftiptr->fname);
       return -1;
-    };
+    }
 
     znzwrite(hdr,1,sizeof(struct dsr),hptr);
     znzclose(hptr);
