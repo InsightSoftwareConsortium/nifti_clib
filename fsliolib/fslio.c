@@ -882,7 +882,7 @@ void FslWriteAllVolumes(FSLIO *fslio, const void *buffer)
 
   FslGetDim(fslio,&x,&y,&z,&t);
   FslWriteHeader(fslio);
-  FslWriteVolumes(fslio,buffer,t);
+  FslWriteVolumes(fslio,buffer, (size_t)t);
   return;
 }
 
@@ -931,7 +931,7 @@ size_t FslWriteVolumes(FSLIO *fslio, const void *buffer, size_t nvols)
       inbuf = buffer;
       tmpbuf = (char *)calloc(nbytes,1);
       FslGetDim(fslio,&nx,&ny,&nz,&nv);
-      nrows = nbytes / (nx * bpv);
+      nrows = (long int)(nbytes / ((size_t)nx * (size_t)bpv));
       for (n=0; n<nrows; n++) {
         for (x=0; x<nx; x++) {
           for (b=0; b<bpv; b++) {
@@ -1021,21 +1021,21 @@ size_t FslReadSliceSeries(FSLIO *fslio, void *buffer, short slice, size_t nvols)
     slbytes = (size_t)x * (size_t)y * (FslGetDataType(fslio, &type) / 8);
     volbytes = slbytes * z;
 
-    orig_offset = znztell(fslio->fileptr);
-    znzseek(fslio->fileptr, slbytes*slice, SEEK_CUR);
+    orig_offset = (size_t)znztell(fslio->fileptr);
+    znzseek(fslio->fileptr, (znz_off_t)(slbytes*(size_t)slice), SEEK_CUR);
 
     for (n=0; n<nvols; n++) {
-      if (n>0) znzseek(fslio->fileptr, volbytes - slbytes, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - slbytes), SEEK_CUR);
       if (znzread((char *)buffer+n*slbytes, 1, slbytes, fslio->fileptr) != slbytes)
         FSLIOERR("FslReadSliceSeries: failed to read values");
      if (fslio->niftiptr->byteorder != nifti_short_order())
-        nifti_swap_Nbytes(slbytes / fslio->niftiptr->swapsize,
+        nifti_swap_Nbytes(slbytes / (size_t)fslio->niftiptr->swapsize,
                           fslio->niftiptr->swapsize, (char *)buffer+n*slbytes);
      }
 
 
     /* restore file pointer to original position */
-    znzseek(fslio->fileptr,orig_offset,SEEK_SET);
+    znzseek(fslio->fileptr,(znz_off_t)orig_offset,SEEK_SET);
     return n;
   }
   if (fslio->mincptr!=NULL) {
@@ -1080,20 +1080,20 @@ size_t FslReadRowSeries(FSLIO *fslio, void *buffer, short row, short slice, size
     slbytes = rowbytes * y;
     volbytes = slbytes * z;
 
-    orig_offset = znztell(fslio->fileptr);
-    znzseek(fslio->fileptr, rowbytes*row + slbytes*slice, SEEK_CUR);
+    orig_offset = (size_t)znztell(fslio->fileptr);
+    znzseek(fslio->fileptr, (znz_off_t)(rowbytes*(size_t)row + slbytes*(size_t)slice), SEEK_CUR);
 
     for (n=0; n<nvols; n++){
-      if (n>0) znzseek(fslio->fileptr, volbytes - rowbytes, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - rowbytes), SEEK_CUR);
       if (znzread((char *)buffer+n*rowbytes, 1, rowbytes, fslio->fileptr) != rowbytes)
         FSLIOERR("FslReadRowSeries: failed to read values");
       if (fslio->niftiptr->byteorder != nifti_short_order())
-        nifti_swap_Nbytes(rowbytes / fslio->niftiptr->swapsize,
+        nifti_swap_Nbytes(rowbytes / (size_t)fslio->niftiptr->swapsize,
                           fslio->niftiptr->swapsize, (char *)buffer+n*rowbytes);
     }
 
     /* restore file pointer to original position */
-    znzseek(fslio->fileptr,orig_offset,SEEK_SET);
+    znzseek(fslio->fileptr,(znz_off_t)orig_offset,SEEK_SET);
     return n;
   }
   if (fslio->mincptr!=NULL) {
@@ -1141,12 +1141,12 @@ size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, sho
     wordsize = fslio->niftiptr->nbyper;
     volbytes = (size_t)xdim * (size_t)ydim * (size_t)zdim * wordsize;
 
-    orig_offset = znztell(fslio->fileptr);
+    orig_offset = (size_t)znztell(fslio->fileptr);
     offset = ((ydim * zVox + yVox) * xdim + xVox) * wordsize;
-    znzseek(fslio->fileptr,offset,SEEK_CUR);
+    znzseek(fslio->fileptr,(znz_off_t)offset,SEEK_CUR);
 
     for (n=0; n<nvols; n++) {
-      if (n>0) znzseek(fslio->fileptr, volbytes - wordsize, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - wordsize), SEEK_CUR);
       if (znzread((char *)buffer+(n*wordsize), 1, wordsize,fslio->fileptr) != wordsize)
         FSLIOERR("FslReadTimeSeries: failed to read values");
       if (fslio->niftiptr->byteorder != nifti_short_order())
@@ -1155,7 +1155,7 @@ size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, sho
     }
 
     /* restore file pointer to original position */
-    znzseek(fslio->fileptr,orig_offset,SEEK_SET);
+    znzseek(fslio->fileptr,(znz_off_t)orig_offset,SEEK_SET);
     return n;
 
   }
@@ -1267,7 +1267,7 @@ void FslGetDimensionality(FSLIO *fslio, size_t *dim)
 {
   if (fslio==NULL)  FSLIOERR("FslGetDimensionality: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
-    *dim = fslio->niftiptr->ndim;
+    *dim = (size_t)fslio->niftiptr->ndim;
   }
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
@@ -1475,7 +1475,7 @@ size_t FslGetDataType(FSLIO *fslio, short *t)
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
   }
-  return (size_t) 8 * nbytepix;
+  return (size_t) 8 * (size_t)nbytepix;
 }
 
 
@@ -2415,20 +2415,20 @@ double ****d4matrix(int th, int zh,  int yh, int xh)
 
 
         /** allocate pointers to vols */
-        t=(double ****) malloc((size_t)((nvol)*sizeof(double***)));
+        t=(double ****) malloc((size_t)nvol*sizeof(double***));
         if (!t) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers to slices */
-        t[0]=(double ***) malloc((size_t)((nvol*nslice)*sizeof(double**)));
+        t[0]=(double ***) malloc((size_t)nvol*(size_t)((nslice)*sizeof(double**)));
         if (!t[0]) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers for ydim */
-        t[0][0]=(double **) malloc((size_t)((nvol*nslice*nrow)*sizeof(double*)));
+        t[0][0]=(double **) malloc((size_t)nvol*(size_t)((nslice*nrow)*sizeof(double*)));
         if (!t[0][0]) FSLIOERR("d4matrix: allocation failure");
 
 
         /** allocate the data blob */
-        t[0][0][0]=(double *) malloc((size_t)((nvol*nslice*nrow*ncol)*sizeof(double)));
+        t[0][0][0]=(double *) malloc((size_t)nvol*(size_t)((nslice*nrow*ncol)*sizeof(double)));
         if (!t[0][0][0]) FSLIOERR("d4matrix: allocation failure");
 
 

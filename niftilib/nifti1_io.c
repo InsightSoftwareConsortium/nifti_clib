@@ -607,7 +607,7 @@ static void update_nifti_image_for_brick_list( nifti_image * nim , int nbricks )
    /* compute nvox                                                       */
    /* do not rely on dimensions above dim[0]         16 Nov 2005 [rickr] */
    for( nim->nvox = 1, ndim = 1; ndim <= nim->dim[0]; ndim++ )
-      nim->nvox *= nim->dim[ndim];
+      nim->nvox *= (size_t)nim->dim[ndim];
 
    /* update the dimensions to 4 or lower */
    for( ndim = 4; (ndim > 1) && (nim->dim[ndim] <= 1); ndim-- )
@@ -701,7 +701,7 @@ int nifti_update_dims_from_array( nifti_image * nim )
    nim->dw = nim->pixdim[7];
 
    for( c = 1, nim->nvox = 1; c <= nim->dim[0]; c++ )
-      nim->nvox *= nim->dim[c];
+      nim->nvox *= (size_t)nim->dim[c];
 
    /* compute ndim, assuming it can be no larger than the old one */
    for( ndim = nim->dim[0]; (ndim > 1) && (nim->dim[ndim] <= 1); ndim-- )
@@ -3708,7 +3708,7 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
       *   the qform_code will be zero, at which point you can check
       *   analyze75_orient if you care to.
       */
-     unsigned char c = *((char *)(&nhdr.qform_code));
+     unsigned char c = *((unsigned char *)(&nhdr.qform_code));
      nim->analyze75_orient = (analyze_75_orient_code)c;
      }
    if( doswap ) {
@@ -3783,7 +3783,7 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
      if( nhdr.dim[ii] > 0 && nim->nvox > SIZE_MAX / (size_t)nhdr.dim[ii] ){
         free(nim); ERREX("dim[] overflows the voxel count");
      }
-     nim->nvox *= nhdr.dim[ii];
+     nim->nvox *= (size_t)nhdr.dim[ii];
   }
 
   /**- set the type of data in voxels and how many bytes per voxel */
@@ -4621,7 +4621,7 @@ static int nifti_add_exten_to_list( nifti1_extension *  new_ext,
 
    /* if an old list exists, copy the pointers and free the list */
    if( tmplist ){
-      memcpy(*list, tmplist, (size_t)((new_length-1)*sizeof(nifti1_extension)));
+      memcpy(*list, tmplist, (size_t)(new_length-1)*sizeof(nifti1_extension));
       free(tmplist);
    }
 
@@ -6663,10 +6663,8 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
    /* scan for opening string */
 
    spos = 0 ;
-   ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ;
-   if( ii != 1 ) return NULL ;   /* nothing scanned: lhs and nn are unset */
-   spos += nn ;
-   if( strcmp(lhs,"<nifti_image") != 0 ) return NULL ;
+   ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ; spos += nn ;
+   if( ii == 0 || strcmp(lhs,"<nifti_image") != 0 ) return NULL ;
 
    /* create empty image struct */
 
@@ -6695,10 +6693,8 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
 
      /* get lhs string */
 
-     ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ;
-     if( ii != 1 ) break ;   /* nothing scanned: lhs and nn are unset */
-     spos += nn ;
-     if( strcmp(lhs,"/>") == 0 ) break ;  /* end of input? */
+     ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ; spos += nn ;
+     if( ii == 0 || strcmp(lhs,"/>") == 0 ) break ;  /* end of input? */
 
      /* skip whitespace and the '=' marker */
 
@@ -6715,9 +6711,8 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
         memcpy(rhs,str+spos+1, (size_t)nn) ; rhs[nn] = '\0' ;
         spos = (str[ii] == '\'') ? ii+1 : ii ;
      } else {
-        ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ;
-        if( ii != 1 ) break ;  /* nothing found: rhs and nn are unset */
-        spos += nn ;
+        ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ; spos += nn ;
+        if( ii == 0 ) break ;  /* nothing found? */
      }
      unescape_string(rhs) ;  /* remove any XML escape sequences */
 
@@ -6937,7 +6932,7 @@ int nifti_nim_has_valid_dims(nifti_image * nim, int complain)
    prod = 1;
    for( c = 1; c <= nim->dim[0]; c++ ){
       if( nim->dim[c] > 0)
-         prod *= nim->dim[c];
+         prod *= (size_t)nim->dim[c];
       else {
          if( !complain ) return 0;
          fprintf(stderr,"** NVd: dim[%d] (=%d) <= 0\n",c, nim->dim[c]);
@@ -7237,12 +7232,12 @@ int nifti_read_subregion_image( nifti_image * nim,
   /* get strides*/
   compute_strides(strides,image_size,nim->nbyper);
 
-  total_alloc_size = nim->nbyper; /* size of pixel */
+  total_alloc_size = (size_t)nim->nbyper; /* size of pixel */
 
   /* find alloc size */
   for(i = 0; i < nim->ndim; i++)
     {
-    total_alloc_size *= region_size[i];
+    total_alloc_size *= (size_t)region_size[i];
     }
   /* allocate buffer, if necessary */
   if(*data == 0)
@@ -7372,11 +7367,11 @@ static int rci_read_data(nifti_image * nim, int * pivots, int * prods,
    /* not the base case, so do a set of reduced reads */
 
    /* compute size of sub-brick: all dimensions below pivot */
-   for( c = 1, sublen = 1; c < *pivots; c++ ) sublen *= nim->dim[c];
+   for( c = 1, sublen = 1; c < *pivots; c++ ) sublen *= (size_t)nim->dim[c];
 
    /* compute number of values to read, i.e. remaining prods */
-   for( c = 1, read_size = 1; c < nprods; c++ ) read_size *= prods[c];
-   read_size *= nim->nbyper;  /* and multiply by bytes per voxel */
+   for( c = 1, read_size = 1; c < nprods; c++ ) read_size *= (size_t)prods[c];
+   read_size *= (size_t)nim->nbyper;  /* and multiply by bytes per voxel */
 
    /* now repeatedly compute offsets, and recursively read */
    for( c = 0; c < prods[0]; c++ ){
@@ -7385,7 +7380,7 @@ static int rci_read_data(nifti_image * nim, int * pivots, int * prods,
       /* the unneeded multiplication is to make this more clear */
       offset = (size_t)c * sublen * nim->dim[*pivots] +
                (size_t)sublen * dims[*pivots];
-      offset *= nim->nbyper;
+      offset *= (size_t)nim->nbyper;
 
       if( g_opts.debug > 3 )
          fprintf(stderr,"-d reading %u bytes, foff %u + %u, doff %u\n",

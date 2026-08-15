@@ -4749,7 +4749,7 @@ nifti_image* nifti_convert_n1hdr2nim(nifti_1_header nhdr, const char * fname)
       *   the qform_code will be zero, at which point you can check
       *   analyze75_orient if you care to.
       */
-     unsigned char c = *((char *)(&nhdr.qform_code));
+     unsigned char c = *((unsigned char *)(&nhdr.qform_code));
      nim->analyze75_orient = (analyze_75_orient_code)c;
      }
    if( doswap ) {
@@ -5853,7 +5853,7 @@ void * nifti_read_header( const char *hname, int *nver, int check )
    }
 
    /* find out what type of header we have */
-   ni_ver = nifti_header_version((char *)&n1hdr, h1size);
+   ni_ver = nifti_header_version((char *)&n1hdr, (size_t)h1size);
    if( g_opts.debug > 2 )
       fprintf(stderr,"-- %s: NIFTI version = %d\n", fname, ni_ver);
 
@@ -6006,7 +6006,7 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
    }
 
    /* find out what type of header we have */
-   ni_ver = nifti_header_version((char *)&n1hdr, h1size);
+   ni_ver = nifti_header_version((char *)&n1hdr, (size_t)h1size);
    if( g_opts.debug > 2 )
       fprintf(stderr,"-- %s: NIFTI version = %d\n", fname, ni_ver);
 
@@ -6407,7 +6407,7 @@ static int nifti_add_exten_to_list( nifti1_extension *  new_ext,
 
    /* if an old list exists, copy the pointers and free the list */
    if( tmplist ){
-      memcpy(*list, tmplist, (size_t)((new_length-1)*sizeof(nifti1_extension)));
+      memcpy(*list, tmplist, (size_t)(new_length-1)*sizeof(nifti1_extension));
       free(tmplist);
    }
 
@@ -6614,8 +6614,8 @@ int valid_nifti_extensions(const nifti_image * nim)
        \return -1 on error, else NIFTI version
  *//*--------------------------------------------------------------------*/
 int nifti_header_version(const char * buf, size_t nbytes){
-   nifti_1_header n1hdr;
-   nifti_2_header n2hdr;
+   const nifti_1_header *n1p = (const nifti_1_header *)buf;
+   const nifti_2_header *n2p = (const nifti_2_header *)buf;
    char            fname[] = { "nifti_header_version" };
    int             sizeof_hdr, sver, nver;
 
@@ -6631,18 +6631,9 @@ int nifti_header_version(const char * buf, size_t nbytes){
       return -1;
    }
 
-   /* buf comes straight from a file read and need not satisfy the alignment
-      either header struct requires, so work from aligned copies rather than
-      casting it.  Only sizeof(nifti_1_header) bytes are guaranteed present,
-      and both sizeof_hdr and magic fall inside that range for either
-      version, so copy exactly that much into each. */
-   memcpy(&n1hdr, buf, sizeof(n1hdr));
-   memset(&n2hdr, 0, sizeof(n2hdr));
-   memcpy(&n2hdr, buf, sizeof(n1hdr));
-
    /* try to determine the version based on sizeof_hdr */
    sver = -1;
-   sizeof_hdr = n1hdr.sizeof_hdr;
+   sizeof_hdr = n1p->sizeof_hdr;
    if     ( sizeof_hdr == (int)sizeof(nifti_1_header) ) sver = 1;
    else if( sizeof_hdr == (int)sizeof(nifti_2_header) ) sver = 2;
    else { /* try swapping */
@@ -6652,8 +6643,8 @@ int nifti_header_version(const char * buf, size_t nbytes){
    }
 
    /* and check magic field */
-   if      ( sver == 1 ) nver = NIFTI_VERSION(n1hdr);
-   else if ( sver == 2 ) nver = NIFTI_VERSION(n2hdr);
+   if      ( sver == 1 ) nver = NIFTI_VERSION(*n1p);
+   else if ( sver == 2 ) nver = NIFTI_VERSION(*n2p);
    else                  nver = -1;
 
    /* now compare and return */
@@ -6662,24 +6653,24 @@ int nifti_header_version(const char * buf, size_t nbytes){
       fprintf(stderr,"-- %s: size ver = %d, ni ver = %d\n", fname, sver, nver);
 
    if( sver == 1 ) {
-      nver = NIFTI_VERSION(n1hdr);
+      nver = NIFTI_VERSION(*n1p);
       if( nver == 0 ) return 0;        /* ANALYZE */
       if( nver == 1 ) return 1;        /* NIFTI-1 */
       if( g_opts.debug > 1 )
-         fprintf(stderr,"** %s: bad NIFTI-1 magic= %.4s", fname, n1hdr.magic);
+         fprintf(stderr,"** %s: bad NIFTI-1 magic= %.4s", fname, n1p->magic);
       return -1;
    } else if ( sver == 2 ) {
-      nver = NIFTI_VERSION(n2hdr);
+      nver = NIFTI_VERSION(*n2p);
       if( nver == 2 ) return 2;        /* NIFTI-2 */
       if( g_opts.debug > 1 )
-         fprintf(stderr,"** %s: bad NIFTI-2 magic4= %.4s", fname, n2hdr.magic);
+         fprintf(stderr,"** %s: bad NIFTI-2 magic4= %.4s", fname, n2p->magic);
       return -1;
    }
 
    /* failure */
 
    if( g_opts.debug > 0 )
-      fprintf(stderr,"** %s: bad sizeof_hdr = %d\n", fname, n1hdr.sizeof_hdr);
+      fprintf(stderr,"** %s: bad sizeof_hdr = %d\n", fname, n1p->sizeof_hdr);
 
    return -1;
 }
@@ -6951,7 +6942,7 @@ if( g_opts.fix_floats )
     case NIFTI_TYPE_FLOAT32:
     case NIFTI_TYPE_COMPLEX64:{
         float *far = (float *)dataptr ; int64_t jj,nj ;
-        nj = ntot / sizeof(float) ;
+        nj = ntot / (int64_t)sizeof(float) ;
         for( jj=0 ; jj < nj ; jj++ )   /* count fixes 30 Nov 2004 [rickr] */
            if( !IS_GOOD_FLOAT(far[jj]) ){
               far[jj] = 0 ;
@@ -6963,7 +6954,7 @@ if( g_opts.fix_floats )
     case NIFTI_TYPE_FLOAT64:
     case NIFTI_TYPE_COMPLEX128:{
         double *far = (double *)dataptr ; int64_t jj,nj ;
-        nj = ntot / sizeof(double) ;
+        nj = ntot / (int64_t)sizeof(double) ;
         for( jj=0 ; jj < nj ; jj++ )   /* count fixes 30 Nov 2004 [rickr] */
            if( !IS_GOOD_FLOAT(far[jj]) ){
               far[jj] = 0 ;
@@ -8814,10 +8805,8 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
    /* scan for opening string */
 
    spos = 0 ;
-   ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ;
-   if( ii != 1 ) return NULL ;   /* nothing scanned: lhs and nn are unset */
-   spos += nn ;
-   if( strcmp(lhs,"<nifti_image") != 0 ) return NULL ;
+   ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ; spos += nn ;
+   if( ii == 0 || strcmp(lhs,"<nifti_image") != 0 ) return NULL ;
 
    /* create empty image struct */
 
@@ -8846,10 +8835,8 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
 
      /* get lhs string */
 
-     ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ;
-     if( ii != 1 ) break ;   /* nothing scanned: lhs and nn are unset */
-     spos += nn ;
-     if( strcmp(lhs,"/>") == 0 ) break ;  /* end of input? */
+     ii = sscanf( str+spos , "%1023s%n" , lhs , &nn ) ; spos += nn ;
+     if( ii == 0 || strcmp(lhs,"/>") == 0 ) break ;  /* end of input? */
 
      /* skip whitespace and the '=' marker */
 
@@ -8866,9 +8853,8 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
         memcpy(rhs,str+spos+1, (size_t)nn) ; rhs[nn] = '\0' ;
         spos = (str[ii] == '\'') ? ii+1 : ii ;
      } else {
-        ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ;
-        if( ii != 1 ) break ;  /* nothing found: rhs and nn are unset */
-        spos += nn ;
+        ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ; spos += nn ;
+        if( ii == 0 ) break ;  /* nothing found? */
      }
      unescape_string(rhs) ;  /* remove any XML escape sequences */
 
