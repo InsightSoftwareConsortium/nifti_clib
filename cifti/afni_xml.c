@@ -208,7 +208,7 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
          if( xd->verb > 1 )
             fprintf(stderr,"-- AXML: truncating fbuffer from %u to %" PRId64  "\n",
                     blen, bshort);
-         blen = (int)bshort;
+         blen = (unsigned)bshort;
       }
 
       done = blen < (unsigned)  bsize;
@@ -288,7 +288,7 @@ afni_xml_list axml_read_buf(const char * buf_in, int64_t bin_len)
         /*--- replace fread with buffer copy ---*/
 
         /* decide how much to copy and copy */
-        if( bin_remain >= bsize ) blen = bsize;
+        if( bin_remain >= bsize ) blen = (unsigned)bsize;
         else                      blen = bin_remain;
 
         if(blen > 0 && blen <= (unsigned)bsize) {
@@ -677,7 +677,7 @@ static int reset_xml_buf(afni_xml_control * xd, char ** buf, int * bsize)
         fprintf(stderr,"++ update buf, %d to %d bytes\n",*bsize,xd->buf_size);
 
     *bsize = xd->buf_size;
-    *buf = (char *)safe_realloc(*buf, (size_t)((*bsize+1) * sizeof(char)));
+    *buf = (char *)safe_realloc(*buf, (size_t)(*bsize+1) * sizeof(char));
     if( ! *buf ) {
         fprintf(stderr,"** failed to alloc %d bytes of xml buf!\n", *bsize);
         *bsize = 0;
@@ -919,7 +919,7 @@ static const char * strip_whitespace(const char * str, int slen)
 
    /* make sure we have local space */
    if( len > blen ) { /* allocate a bigger buffer */
-      buf = (char *)safe_realloc(buf, (size_t)((len+1) * sizeof(char)));
+      buf = (char *)safe_realloc(buf, (size_t)(len+1) * sizeof(char));
       if( !buf ) {
          fprintf(stderr,"** failed to alloc wspace buf of len %d\n", len+1);
          return str;
