@@ -369,6 +369,14 @@ int main (int argc, const char *argv[])
   nifti_image_free(reference_image);
   nifti_image_free(reloaded_image);
   }
+  {
+  /* sscanf matches nothing here; run under memcheck to catch an uninitialized read */
+  int bytes_read = 0;
+  nifti_image * blank_image = nifti_image_from_ascii(" \n\t ", &bytes_read);
+  PrintTest("nifti_image_from_ascii whitespace only",
+            blank_image != NULL,false,&Errors);
+  nifti_image_free(blank_image);
+  }
 
   {
   enum { NUM_FILE_NAMES=8 };

@@ -46,6 +46,10 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_executable(${NIFTI_PACKAGE_PREFIX}clib_02_nifti2 clib_02_nifti2.c)
   target_link_libraries(${NIFTI_PACKAGE_PREFIX}clib_02_nifti2 PUBLIC ${NIFTI_NIFTILIB2_NAME})
 
+  add_executable(${NIFTI_PACKAGE_PREFIX}nifti2_from_ascii_test nifti2_from_ascii_test.c)
+  target_link_libraries(${NIFTI_PACKAGE_PREFIX}nifti2_from_ascii_test PUBLIC ${NIFTI_NIFTILIB2_NAME})
+  add_test( NAME ${NIFTI_PACKAGE_PREFIX}nifti2_from_ascii_test COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti2_from_ascii_test> )
+
 
 
   # Do all regression tests
