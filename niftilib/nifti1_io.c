@@ -4393,7 +4393,7 @@ nifti_image * nifti_read_ascii_image(znzFile fp, char *fname, int flen,
       fprintf(stderr,"-d %s: have ASCII NIFTI file of size %d\n",fname,slen);
 
    if( slen > 65530 ) slen = 65530 ;
-   sbuf = (char *)calloc(sizeof(char),slen+1) ;
+   sbuf = (char *)calloc(slen+1, sizeof(char)) ;
    if( !sbuf ){
       fprintf(stderr,"** %s: failed to alloc %d bytes for sbuf",lfunc,65530);
       return NULL;
