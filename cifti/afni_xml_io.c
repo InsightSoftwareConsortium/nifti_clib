@@ -119,7 +119,7 @@ int axio_num_tokens(const char * str, int64_t maxlen)
    if( ! str || ! * str ) return 0;
 
    if( maxlen > 0 ) len = maxlen;
-   else             len = strlen(str);
+   else             len = (int64_t)strlen(str);
 
    ntok = 0;
    intok = 0;

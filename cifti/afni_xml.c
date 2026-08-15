@@ -141,7 +141,7 @@ static int  show_attrs     (afni_xml_control *, const char **, int);
 
 static int64_t      loc_strnlen     (const char * str, int64_t maxlen);
 static afni_xml_t * make_afni_xml   (const char * ename, const char ** attr);
-static const char * strip_whitespace(const char * str, int slen);
+static char       * strip_whitespace(const char * str, int slen);
 
 /*----------------------- main I/O functions ---------------------------*/
 
@@ -204,7 +204,7 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
          if( xd->verb > 1 )
             fprintf(stderr,"-- AXML: truncating fbuffer from %u to %" PRId64  "\n",
                     blen, bshort);
-         blen = (int)bshort;
+         blen = (unsigned)bshort;
       }
 
       done = blen < (unsigned)  bsize;
@@ -284,7 +284,7 @@ afni_xml_list axml_read_buf(const char * buf_in, int64_t bin_len)
         /*--- replace fread with buffer copy ---*/
 
         /* decide how much to copy and copy */
-        if( bin_remain >= bsize ) blen = bsize;
+        if( bin_remain >= bsize ) blen = (unsigned)bsize;
         else                      blen = bin_remain;
 
         if(blen > 0 && blen <= (unsigned)bsize) {
@@ -666,7 +666,7 @@ static int reset_xml_buf(afni_xml_control * xd, char ** buf, int * bsize)
         fprintf(stderr,"++ update buf, %d to %d bytes\n",*bsize,xd->buf_size);
 
     *bsize = xd->buf_size;
-    *buf = (char *)safe_realloc(*buf, (size_t)((*bsize+1) * sizeof(char)));
+    *buf = (char *)safe_realloc(*buf, (size_t)(*bsize+1) * sizeof(char));
     if( ! *buf ) {
         fprintf(stderr,"** failed to alloc %d bytes of xml buf!\n", *bsize);
         *bsize = 0;
@@ -888,7 +888,7 @@ static int show_attrs(afni_xml_control * xd, const char ** attr, int showd)
 static void free_whitespace(void) { strip_whitespace(NULL,-2); }
 
 /* if slen == 0, use entire length */
-static const char * strip_whitespace(const char * str, int slen)
+static char * strip_whitespace(const char * str, int slen)
 {
    static char * buf = NULL;
    static int    blen = 0;
@@ -898,18 +898,18 @@ static const char * strip_whitespace(const char * str, int slen)
    if(!str && slen == -2){ free(buf); buf=NULL; blen=0; return 0; }
 
    /* if string is long, forget it */
-   if( !str || slen > 1024 ) return str;
+   if( !str || slen > 1024 ) return (char *)str;
 
    len = strlen(str);
    if( slen > 0 && slen < len ) len = slen;
-   if( len <= 0 ) return str;
+   if( len <= 0 ) return (char *)str;
 
    /* make sure we have local space */
    if( len > blen ) { /* allocate a bigger buffer */
-      buf = (char *)safe_realloc(buf, (size_t)((len+1) * sizeof(char)));
+      buf = (char *)safe_realloc(buf, (size_t)(len+1) * sizeof(char));
       if( !buf ) {
          fprintf(stderr,"** failed to alloc wspace buf of len %d\n", len+1);
-         return str;
+         return (char *)str;
       }
       blen = len;
    }
