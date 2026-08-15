@@ -864,7 +864,7 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
       return 1;
    }
    cp = opts->command + len;
-   remain -= len;
+   remain -= (size_t)len;
 
    /* get the rest, with special attention to input files */
    for( int ac = 1; ac < argc; ac++ )
@@ -889,7 +889,7 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
          fprintf(stderr,"FCS: error parsing command, continuing...\n");
          return 1;
       }
-      remain -= len;
+      remain -= (size_t)len;
 
       /* infiles is okay, but after the *next* argument, we may skip files */
       /* (danger, will robinson!  hack alert!) */
