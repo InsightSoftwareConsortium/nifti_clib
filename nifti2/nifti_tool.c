@@ -2844,7 +2844,7 @@ int act_diff_nims( nt_opts * opts )
    if( ! nim0 ) return 1;  /* errors have been printed */
 
    nim1 = nt_image_read(opts, opts->infiles.list[1], 0, 0);
-   if( ! nim1 ){ free(nim0); return 1; }
+   if( ! nim1 ){ nifti_image_free(nim0); return 1; }
 
    if( g_debug > 1 )
       fprintf(stderr,"\n-d nifti_image diffs between '%s' and '%s'...\n",
@@ -3360,6 +3360,7 @@ int act_mod_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
 
@@ -3370,6 +3371,7 @@ int act_mod_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3378,6 +3380,8 @@ int act_mod_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3478,6 +3482,7 @@ int act_mod_hdr2s( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -3487,6 +3492,7 @@ int act_mod_hdr2s( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3495,6 +3501,8 @@ int act_mod_hdr2s( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3624,6 +3632,7 @@ int act_swap_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -3633,6 +3642,7 @@ int act_swap_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3641,6 +3651,8 @@ int act_swap_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
