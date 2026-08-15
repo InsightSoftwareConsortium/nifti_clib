@@ -473,7 +473,7 @@ static int dalloc_as_nifti_type(FILE * fp, afni_xml_t * ax, int64_t nvals,
    /* note number of bytes per value and number of values to allocate */
    nifti_datatype_sizes(ax->btype, &nbyper, NULL);
 
-   ax->bdata = malloc(nbyper * ntok);
+   ax->bdata = malloc((size_t)(nbyper * ntok));
    if( ! ax->bdata ) {
       fprintf(fp, "** axio_alloc: failed to allocate %" PRId64 " vals of size %d\n",
               ntok, nbyper);

@@ -919,7 +919,7 @@ static int nifti_alloc_NBL_mem(const nifti_image * nim, int nbricks,
    }
 
    nbl->bsize   = (size_t)nim->nx * nim->ny * nim->nz * nim->nbyper;/* bytes */
-   nbl->bricks  = (void **)malloc(nbl->nbricks * sizeof(void *));
+   nbl->bricks  = (void **)malloc((size_t)nbl->nbricks * sizeof(void *));
 
    if( ! nbl->bricks ){
       fprintf(stderr,"** NANM: failed to alloc %d void ptrs\n",nbricks);
@@ -969,8 +969,8 @@ static int nifti_copynsort(int nbricks, const int * blist, int ** slist,
    int * stmp, * itmp;   /* for ease of typing/reading */
    int   c1, c2, spos, tmp;
 
-   *slist  = (int *)malloc(nbricks * sizeof(int));
-   *sindex = (int *)malloc(nbricks * sizeof(int));
+   *slist  = (int *)malloc((size_t)nbricks * sizeof(int));
+   *sindex = (int *)malloc((size_t)nbricks * sizeof(int));
 
    if( !*slist || !*sindex ){
       fprintf(stderr,"** NCS: failed to alloc %d ints for sorting\n",nbricks);
@@ -980,7 +980,7 @@ static int nifti_copynsort(int nbricks, const int * blist, int ** slist,
    }
 
    /* init the lists */
-   memcpy(*slist, blist, nbricks*sizeof(int));
+   memcpy(*slist, blist, (size_t)nbricks * sizeof(int));
    for( c1 = 0; c1 < nbricks; c1++ ) (*sindex)[c1] = c1;
 
    /* now actually sort slist */
@@ -4418,12 +4418,12 @@ nifti_image * nifti_read_ascii_image(znzFile fp, char *fname, int flen,
       fprintf(stderr,"-d %s: have ASCII NIFTI file of size %d\n",fname,slen);
 
    if( slen > 65530 ) slen = 65530 ;
-   sbuf = (char *)calloc(sizeof(char),slen+1) ;
+   sbuf = (char *)calloc(sizeof(char), (size_t)(slen+1)) ;
    if( !sbuf ){
       fprintf(stderr,"** %s: failed to alloc %d bytes for sbuf",lfunc,65530);
       return NULL;
    }
-   znzread( sbuf , 1 , slen , fp ) ;
+   znzread( sbuf , 1 , (size_t)slen, fp ) ;
    nim = nifti_image_from_ascii( sbuf, &txt_size ) ; free( sbuf ) ;
    if( nim == NULL ){
       LNI_FERR(lfunc,"failed nifti_image_from_ascii()",fname);
@@ -4607,12 +4607,12 @@ static int nifti_add_exten_to_list( nifti1_extension *  new_ext,
    nifti1_extension * tmplist;
 
    tmplist = *list;
-   *list = (nifti1_extension *)malloc(new_length * sizeof(nifti1_extension));
+   *list = (nifti1_extension *)malloc((size_t)new_length * sizeof(nifti1_extension));
 
    /* check for failure first */
    if( ! *list ){
       fprintf(stderr,"** failed to alloc %d extension structs (%zu bytes)\n",
-              new_length, new_length*sizeof(nifti1_extension));
+              new_length, (size_t)new_length * sizeof(nifti1_extension));
       if( !tmplist ) return -1;  /* no old list to lose */
 
       *list = tmplist;  /* reset list to old one */
@@ -4621,7 +4621,7 @@ static int nifti_add_exten_to_list( nifti1_extension *  new_ext,
 
    /* if an old list exists, copy the pointers and free the list */
    if( tmplist ){
-      memcpy(*list, tmplist, (new_length-1)*sizeof(nifti1_extension));
+      memcpy(*list, tmplist, (size_t)((new_length-1)*sizeof(nifti1_extension)));
       free(tmplist);
    }
 
@@ -4665,13 +4665,13 @@ static int nifti_fill_extension( nifti1_extension *ext, const char * data,
    ext->esize = esize;
 
    /* allocate esize-8 (maybe more than len), using calloc for fill */
-   ext->edata = (char *)calloc(esize-8, sizeof(char));
+   ext->edata = (char *)calloc((size_t)(esize-8),sizeof(char));
    if( !ext->edata ){
       fprintf(stderr,"** NFE: failed to alloc %d bytes for extension\n",len);
       return -1;
    }
 
-   memcpy(ext->edata, data, len);  /* copy the data, using len */
+   memcpy(ext->edata, data, (size_t)len);  /* copy the data, using len */
    ext->ecode = ecode;             /* set the ecode */
 
    if( g_opts.debug > 2 )
@@ -4742,13 +4742,13 @@ static int nifti_read_next_extension( nifti1_extension * nex, nifti_image *nim,
    nex->ecode = code;
 
    size -= 8;  /* subtract space for size and code in extension */
-   nex->edata = (char *)malloc(size * sizeof(char));
+   nex->edata = (char *)malloc((size_t)size * sizeof(char));
    if( !nex->edata ){
       fprintf(stderr,"** failed to allocate %d bytes for extension\n",size);
       return -1;
    }
 
-   count = (int)znzread(nex->edata, 1, size, fp);
+   count = (int)znzread(nex->edata, 1, (size_t)size, fp);
    if( count < size ){
       if( g_opts.debug > 0 )
          fprintf(stderr,"-d read only %d (of %d) bytes for extension\n",
@@ -5488,7 +5488,7 @@ nifti_image * nifti_make_new_nim(const int dims[8], int datatype, int data_fill)
       fprintf(stderr,"+d nifti_make_new_nim, data_fill = %d\n",data_fill);
 
    if( data_fill ) {
-      nim->data = calloc(nim->nvox, nim->nbyper);
+      nim->data = calloc(nim->nvox, (size_t)(nim->nbyper));
 
       /* if we cannot allocate data, take ball and go home */
       if( !nim->data ) {
@@ -5650,7 +5650,7 @@ int nifti_copy_extensions(nifti_image * nim_dest, const nifti_image * nim_src)
 
    if( nim_src->num_ext <= 0 ) return 0;
 
-   bytes = nim_src->num_ext * sizeof(nifti1_extension);  /* I'm lazy */
+   bytes = (size_t)nim_src->num_ext * sizeof(nifti1_extension);  /* I'm lazy */
    nim_dest->ext_list = (nifti1_extension *)malloc(bytes);
    if( !nim_dest->ext_list ){
       fprintf(stderr,"** failed to allocate %d nifti1_extension structs\n",
@@ -5667,7 +5667,7 @@ int nifti_copy_extensions(nifti_image * nim_dest, const nifti_image * nim_src)
          fprintf(stderr,"+d dup'ing ext #%d of size %d (from size %d)\n",
                  c, size, old_size);
       /* data length is size-8, as esize includes space for esize and ecode */
-      data = (char *)calloc(size-8,sizeof(char));      /* maybe size > old */
+      data = (char *)calloc((size_t)(size-8),sizeof(char));      /* maybe size > old */
       if( !data ){
          fprintf(stderr,"** failed to alloc %d bytes for extension\n", size);
          if( c == 0 ) { free(nim_dest->ext_list); nim_dest->ext_list = NULL; }
@@ -5678,7 +5678,7 @@ int nifti_copy_extensions(nifti_image * nim_dest, const nifti_image * nim_src)
       nim_dest->ext_list[c].esize = size;
       nim_dest->ext_list[c].ecode = nim_src->ext_list[c].ecode;
       nim_dest->ext_list[c].edata = data;
-      memcpy(data, nim_src->ext_list[c].edata, old_size-8);
+      memcpy(data, nim_src->ext_list[c].edata, (size_t)(old_size-8));
 
       nim_dest->num_ext++;
    }
@@ -6322,7 +6322,7 @@ static char *escapize_string( const char * str )
        default: lout++ ; break ;      /* copy all other chars */
      }
    }
-   out = (char *)calloc(1,lout) ;     /* allocate output string */
+   out = (char *)calloc(1, (size_t)lout) ;     /* allocate output string */
    if( !out ){
       fprintf(stderr,"** escapize_string: failed to alloc %d bytes\n",lout);
       return NULL;
@@ -6596,7 +6596,7 @@ char *nifti_image_to_ascii( const nifti_image *nim )
    snprintf( buf+strlen(buf) , bufLen-strlen(buf) , "/>\n" ) ;   /* XML-ish closer */
 
    nbuf = (int)strlen(buf) ;
-   newbuf = (char *)realloc((void *)buf, nbuf+1); /* cut back to proper length */
+   newbuf = (char *)realloc((void *)buf, (size_t)(nbuf+1)); /* cut back to proper length */
    if( !newbuf ){
       free(buf);
       fprintf(stderr,"** NITA: failed to realloc %d bytes\n",nbuf+1);
@@ -6712,7 +6712,7 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
         ii = spos+1 ;
         while( str[ii] != '\0' && str[ii] != '\'' ) ii++ ;
         nn = ii-spos-1 ; if( nn > 1023 ) nn = 1023 ;
-        memcpy(rhs,str+spos+1,nn) ; rhs[nn] = '\0' ;
+        memcpy(rhs,str+spos+1, (size_t)nn) ; rhs[nn] = '\0' ;
         spos = (str[ii] == '\'') ? ii+1 : ii ;
      } else {
         ii = sscanf( str+spos , "%1023s%n" , rhs , &nn ) ;
@@ -7428,7 +7428,7 @@ static int rci_alloc_mem(void ** data, const int prods[8], int nprods, int nbype
          fprintf(stderr,"+d alloc %d (= %d x %d) bytes for collapsed image\n",
                  size, size/nbyper, nbyper);
 
-      *data = malloc(size);   /* actually allocate the memory */
+      *data = malloc((size_t)size);   /* actually allocate the memory */
       if( ! *data ){
          fprintf(stderr,"** rci_am: failed to alloc %d bytes for data\n", size);
          return -1;
@@ -7591,7 +7591,7 @@ int * nifti_get_intlist( int nvals , const char * str )
 
       if( str[ipos] == ',' || ISEND(str[ipos]) ){
          nout++ ;
-        subv_realloc = (int *)realloc( (char *)subv , sizeof(int) * (nout+1) ) ;
+        subv_realloc = (int *)realloc( (char *)subv , (size_t)(sizeof(int) * (nout+1))) ;
          if( !subv_realloc ) {
            free(subv);
            fprintf(stderr,"** nifti_get_intlist: failed realloc of %d ints\n",
@@ -7682,7 +7682,7 @@ int * nifti_get_intlist( int nvals , const char * str )
 
       for( ii=ibot ; (ii-itop)*istep <= 0 ; ii += istep ){
          nout++ ;
-        subv_realloc = (int *)realloc( (char *)subv , sizeof(int) * (nout+1) ) ;
+        subv_realloc = (int *)realloc( (char *)subv , (size_t)(sizeof(int) * (nout+1))) ;
          if( !subv_realloc ) {
            free(subv);
            fprintf(stderr,"** nifti_get_intlist: failed realloc of %d ints\n",
