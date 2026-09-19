@@ -2752,7 +2752,7 @@ void nifti_set_fix_floats( int fix )
 /*! check current directory for existing header file
 
     \return filename of header on success and NULL if no appropriate file
-            could be found
+            could be found or (FSLSTYLE) if both .nii and .nii.gz exist
 
     If fname has an uppercase extension, check for uppercase files.
 
@@ -2819,16 +2819,22 @@ char * nifti_findhdrname(const char* fname)
    strcat(hdrname,elist[efirst]);
    #ifdef FSLSTYLE
    if (nifti_fileexists(hdrname)) {
-      free(basename);
+      /* basename is read by the ambiguity message below */
       char *gzname = (char *)calloc(sizeof(char),strlen(hdrname)+8);
+      if( !gzname ){
+         fprintf(stderr,"** nifti_findhdrname: failed to alloc gzname\n");
+         free(basename); free(hdrname);
+         return NULL;
+      }
       strcpy(gzname, hdrname);
       strcat(gzname,extzip);
       if (nifti_fileexists(gzname)) {
          fprintf(stderr,"Image Exception : Multiple possible filenames detected for basename (*.nii, *.nii.gz): %s\n", basename);
-         free(gzname);
-         exit(134);
+         free(gzname); free(basename); free(hdrname);
+         return NULL;
       }
       free(gzname);
+      free(basename);
       return hdrname;
    }
    #else
