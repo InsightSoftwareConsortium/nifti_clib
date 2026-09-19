@@ -297,7 +297,8 @@ int znzprintf(znzFile stream, const char *format, ...)
   int retval=0;
   char *tmpstr;
   va_list va;
-  if (stream==NULL) { return 0; }
+  /* failures return -1 as printf does; 0 is a successful empty write */
+  if (stream==NULL) { return -1; }
   va_start(va, format);
 #ifdef HAVE_ZLIB
   if (stream->zfptr!=NULL) {
@@ -308,12 +309,19 @@ int znzprintf(znzFile stream, const char *format, ...)
     if( tmpstr == NULL ){
        fprintf(stderr,"** ERROR: znzprintf failed to alloc %zu bytes\n", size);
        va_end(va);
-       return retval;
+       return -1;
     }
     written = vsnprintf(tmpstr,size,format,va);
-    if( written < 0 || (size_t)written >= size )
+    if( written < 0 || (size_t)written >= size ){
+       /* a partial record reported as complete is worse than none */
        fprintf(stderr,"** ERROR: znzprintf output truncated at %zu bytes\n", size-1);
-    retval=gzprintf(stream->zfptr,"%s",tmpstr);
+       free(tmpstr);
+       va_end(va);
+       return -1;
+    }
+    /* gzprintf writes nothing and returns 0 past its 8192 byte buffer */
+    retval=gzwrite(stream->zfptr,tmpstr,(unsigned)written);
+    if( retval != written ) retval = -1;
     free(tmpstr);
   } else
 #endif
