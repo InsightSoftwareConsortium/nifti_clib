@@ -794,7 +794,21 @@ static int epop(afni_xml_control * xd, const char * ename)
 static int process_popped_element(afni_xml_control * xd, const char * ename)
 {
    afni_xml_t * ax;
+
+   /* a stack slot is filled by the matching epush().  An element that was
+      skipped never fills one, so do not assume this slot holds a struct
+      with a name. */
+   if( xd->depth <= 0 || xd->depth > AXML_MAX_DEPTH ) {
+      if( gAXD.verb ) fprintf(stderr,"** pop at depth %d!\n", xd->depth);
+      return 1;
+   }
+
    ax = xd->stack[xd->depth-1];
+   if( ! ax || ! ax->name ) {
+      if( gAXD.verb ) fprintf(stderr,"** pop of unfilled element '%s'!\n",
+                              ename ? ename : "NULL");
+      return 1;
+   }
 
    if( strcmp(ename, ax->name) ) {
       if( gAXD.verb ) fprintf(stderr,"** pop mismatch!\n");
