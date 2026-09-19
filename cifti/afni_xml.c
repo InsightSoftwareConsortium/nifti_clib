@@ -850,7 +850,11 @@ static afni_xml_t * make_afni_xml(const char * ename, const char ** attr)
    newp = new_afni_xml(ename);
    if( ! newp ) return NULL;
 
-   axml_add_attrs(newp, attr);
+   /* a failure here is an allocation failure; epush() skips on NULL */
+   if( axml_add_attrs(newp, attr) ) {
+      axml_free_xml_t(newp);
+      return NULL;
+   }
 
    return newp;
 }
