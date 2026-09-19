@@ -26,6 +26,10 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         build_type: [Release]
         c_compiler: [gcc, clang]
+        # 'default' is what a consumer gets with no options; 'all' turns on
+        # the optional libraries and the FSL parity defines, which are the
+        # code paths no workflow compiled before.
+        options: [default, all]
         include:
           - os: macos-latest
             c_compiler: clang
@@ -43,6 +47,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install optional dependencies
+      # cifti needs expat; only the 'all' configuration builds it.
+      if: runner.os == 'Linux' && matrix.options == 'all'
+      run: sudo apt-get update && sudo apt-get install -y libexpat1-dev zlib1g-dev
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -58,6 +67,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        ${{ matrix.options == 'all' && '-DUSE_CIFTI_CODE=ON -DUSE_FSL_CODE=ON -DFSLSTYLE=ON' || '' }}
         -S ${{ github.workspace }}
 
     - name: Build
