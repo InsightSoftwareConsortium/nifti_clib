@@ -220,6 +220,7 @@ int disp_cifti_extension(nifti_image * nim, opts_t * opts)
       }
 
    fp = open_write_stream(opts->fout);
+   if( !fp ) return 1;
    if( !ext ) {
       fprintf(fp, "** no CIFTI extension in %s\n",nim->fname?nim->fname:"NULL");
       close_stream(fp);
@@ -243,6 +244,7 @@ int eval_cifti_extension(afni_xml_t * ax, opts_t * opts)
               opts->fout ? opts->fout : "DEFAULT" );
 
    fp = open_write_stream(opts->fout);
+   if( !fp ) return 1;
    axml_set_wstream(fp);
 
    if( opts->verb > 1 ) fprintf(stderr, "-- recursive eval from %s\n",
@@ -270,6 +272,7 @@ int eval_cifti_extension(afni_xml_t * ax, opts_t * opts)
       axml_recur(ax_show_names, ax);
 
    /* possibly close file */
+   axml_set_wstream(NULL);
    close_stream(fp);
 
    return 0;
