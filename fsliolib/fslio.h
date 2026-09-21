@@ -180,6 +180,8 @@ FSL_API void   FslWriteHeader(FSLIO *fslio);
 
 FSL_API int   FslFileExists(const char *filename);
 FSL_API char *FslMakeBaseName(const char *fname);
+FSL_API void  FslGetHdrImgNames(const char* filename, const FSLIO* fslio,
+                                char** hdrname, char** imgname);
 FSL_API int   FslCheckForMultipleFileNames(const char* filename);
 FSL_API int   FslGetEnvOutputType(void);
 
@@ -233,6 +235,7 @@ FSL_API void FslGetTimeUnits(FSLIO *fslio, char *units);
 FSL_API void FslSetDataType(FSLIO *fslio, short t);
 FSL_API size_t FslGetDataType(FSLIO *fslio, short *t);
 FSL_API int    FslGetIntensityScaling(FSLIO *fslio, float *slope, float *intercept);
+FSL_API void   FslSetIntensityScaling(FSLIO *fslio, float slope, float intercept);
 FSL_API void   FslSetIntent(FSLIO *fslio, short intent_code, float p1, float p2, float p3);
 FSL_API short  FslGetIntent(FSLIO *fslio, short *intent_code, float *p1, float *p2,
                             float *p3);
