@@ -474,6 +474,9 @@ static const nifti_type_ele nifti_type_list[] = {
     { 2304,     4,       0,   "NIFTI_TYPE_RGBA32"       },
 };
 
+/* also defined in libniftiio; both export it */
+int nifti_fileexists(const char* fname);
+
 /*---------------------------------------------------------------------------*/
 /* prototypes for internal functions - not part of exported library          */
 
