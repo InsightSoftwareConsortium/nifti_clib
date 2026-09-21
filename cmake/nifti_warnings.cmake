@@ -20,6 +20,14 @@
 # make CI fail on them.  That option is only safe to turn on in CI once
 # the future set below is empty.
 #
+# THIS BRANCH ALSO ENABLES THE FUTURE SET, so that CI measures it on
+# every run and the counts below stay honest as the fixing changes land.
+# NIFTI_WARNINGS_AS_ERRORS therefore stays OFF here: the future-set
+# flags still warn, and making them errors would leave this branch
+# permanently red and useless as a measurement.  A flag graduates into
+# the clean set only in a change that follows the one fixing its
+# warnings, so CI is green at every step.
+#
 
 option(NIFTI_ENABLE_WARNINGS "Enable the project's compiler warning set" ON)
 option(NIFTI_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
@@ -61,6 +69,45 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
   )
 endif()
 
+# ---------------------------------------------------------------------
+# READY TO PROMOTE - measured at zero on this tree
+# ---------------------------------------------------------------------
+# These were in the future set and now hit nothing.  They belong in the
+# clean set above; moving them there is the companion change's job, not
+# this branch's.  Kept enabled here so a regression is caught.
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wextra               # was 3 via -Wsign-compare, now 0
+    -Wmissing-prototypes  # was 18, now 0
+  )
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wnewline-eof         # was 1, now 0
+  )
+endif()
+
+# ---------------------------------------------------------------------
+# FUTURE SET - still warns, enabled here only to keep the count honest
+# ---------------------------------------------------------------------
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wcast-qual           #   9
+    -Wsign-conversion     # 200
+  )
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wmissing-variable-declarations #  2
+    -Wconditional-uninitialized     # 11
+    -Wcast-align                    # 19
+    -Wshorten-64-to-32              # 31
+    -Wextra-semi-stmt               # 72
+  )
+endif()
+
 if(NIFTI_WARNINGS_AS_ERRORS)
   if(MSVC)
     list(APPEND _nifti_warnings /WX)
@@ -76,31 +123,26 @@ unset(_nifti_warnings)
 # FUTURE SET - wanted, not yet earned
 # =====================================================================
 #
-# Counts measured 2026-09-21 at d773c59, AppleClang 21.0.0, Release,
+# Counts measured 2026-09-22 at b4876bf, AppleClang 21.0.0, Release,
 # USE_CIFTI_CODE=ON USE_FSL_CODE=ON FSLSTYLE=ON, NIFTI_BUILD_TESTING=OFF.
-# Promote a flag to the clean set above only in a PR that follows the
-# PR fixing its warnings, so CI is green at every step.
 #
-#   flag                            hits   fix
+#   flag                            hits
 #   ------------------------------------------------------------------
-#   -Wsign-compare (via -Wextra)       3   PR #51
-#   -Wcast-qual                        9   PR #45
-#   -Wmissing-prototypes              18   PR #37
-#   -Wsign-conversion                200   PR #53 / #52, split by dir:
-#                                          znzlib 4, cifti 14,
-#                                          fsliolib 45, nifti2 58,
-#                                          niftilib 79
+#   -Wextra (via -Wsign-compare)       0   ready to promote
+#   -Wcast-qual                        9
+#   -Wmissing-prototypes               0   ready to promote
+#   -Wsign-conversion                200   split by dir: znzlib 4,
+#                                          cifti 14, fsliolib 45,
+#                                          nifti2 58, niftilib 79
 #
 #   Clang-only:
-#   -Wnewline-eof                      1   PR #35 covers one file only
+#   -Wnewline-eof                      0   ready to promote
 #   -Wmissing-variable-declarations    2
-#   -Wconditional-uninitialized       11   relates to PR #47 / #48
-#   -Wcast-align                      19   relates to PR #44
-#   -Wshorten-64-to-32                31   relates to PR #52
-#   -Wextra-semi-stmt                 74   relates to PR #49
-#
-# -Wextra is held back only because it implies -Wsign-compare; once
-# PR #51 lands it moves to the clean set with its 3 hits resolved.
+#   -Wconditional-uninitialized       11
+#   -Wcast-align                      19
+#   -Wshorten-64-to-32                31
+#   -Wextra-semi-stmt                 72   fsliolib 70, niftilib 1,
+#                                          nifti2 1
 #
 # NOT MEASURED, do not add without a census first:
 #
