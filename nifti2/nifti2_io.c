@@ -472,6 +472,9 @@ static const nifti_type_ele nifti_type_list[] = {
 };
 
 /*---------------------------------------------------------------------------*/
+/* Defined in both libniftiio and libnifti2; linkage pending that duplication. */
+int nifti_fileexists(const char* fname);
+
 /* prototypes for internal functions - not part of exported library          */
 
 /* extension routines */
