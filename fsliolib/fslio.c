@@ -1354,8 +1354,9 @@ void FslGetAuxFile(FSLIO *fslio,char *aux_file)
 {
   if (fslio==NULL)  FSLIOERR("FslGetAuxFile: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
-    strncpy(aux_file,fslio->niftiptr->aux_file, 24);
-    aux_file[24-1] = '\0';
+    /* aux_file must have room for sizeof(nifti_1_header::aux_file) bytes. */
+    strncpy(aux_file,fslio->niftiptr->aux_file,sizeof(fslio->niftiptr->aux_file)-1);
+    aux_file[sizeof(fslio->niftiptr->aux_file)-1] = '\0';
   }
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
