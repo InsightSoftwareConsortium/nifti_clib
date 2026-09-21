@@ -35,7 +35,6 @@ libfslio.so FslCheckForMultipleFileNames
 libfslio.so FslCloneHeader
 libfslio.so FslClose
 libfslio.so FslFileExists
-libfslio.so FslFileType
 libfslio.so FslFileTypeString
 libfslio.so FslGetAnalyzeOrigin
 libfslio.so FslGetAuxFile
@@ -46,7 +45,6 @@ libfslio.so FslGetDim
 libfslio.so FslGetDimensionality
 libfslio.so FslGetEnvOutputType
 libfslio.so FslGetFileType
-libfslio.so FslGetFileType2
 libfslio.so FslGetHdrImgNames
 libfslio.so FslGetIgnoreMFQ
 libfslio.so FslGetIntensityScaling
@@ -54,7 +52,6 @@ libfslio.so FslGetIntent
 libfslio.so FslGetLeftRightOrder
 libfslio.so FslGetMMCoord
 libfslio.so FslGetOverrideOutputType
-libfslio.so FslGetReadFileType
 libfslio.so FslGetRigidXform
 libfslio.so FslGetStdXform
 libfslio.so FslGetTimeUnits
@@ -62,14 +59,11 @@ libfslio.so FslGetVolSize
 libfslio.so FslGetVolumeAsScaledDouble
 libfslio.so FslGetVoxCoord
 libfslio.so FslGetVoxDim
-libfslio.so FslGetVoxUnits
 libfslio.so FslGetWriteMode
 libfslio.so FslInit
-libfslio.so FslInit4Write
 libfslio.so FslInitHeader
 libfslio.so FslIsCompressedFileType
 libfslio.so FslIsSingleFileType
-libfslio.so FslIsValidFileType
 libfslio.so FslMakeBaseName
 libfslio.so FslOpen
 libfslio.so FslReadAllVolumes
@@ -96,17 +90,14 @@ libfslio.so FslSetRigidXform
 libfslio.so FslSetStdXform
 libfslio.so FslSetTimeUnits
 libfslio.so FslSetVoxDim
-libfslio.so FslSetVoxUnits
 libfslio.so FslSetWriteMode
 libfslio.so FslWriteAllVolumes
 libfslio.so FslWriteHeader
 libfslio.so FslWriteVolumes
 libfslio.so FslXOpen
-libfslio.so check_for_multiple_filenames
 libfslio.so convertBufferToScaledDouble
 libfslio.so d3matrix
 libfslio.so d4matrix
-libfslio.so fsl_fileexists
 libfslio.so mat44_to_mat33
 libnifti2.so disp_nifti_1_header
 libnifti2.so disp_nifti_2_header
