@@ -28,6 +28,15 @@
 #include "fslio.h"
 #include "assert.h"
 
+/* Internal: no header declares these and nothing outside this file calls them. */
+static int  FslIsValidFileType(int filetype);
+static int  FslGetFileType2(const FSLIO *fslio, int quiet);
+static int  FslFileType(const char *fname);
+static int  FslGetReadFileType(const FSLIO *fslio);
+static void FslInit4Write(FSLIO* fslio, const char* filename, int ft);
+static int  fsl_fileexists(const char* fname);
+static int  check_for_multiple_filenames(const char* filename);
+
 static int FslIgnoreMFQ=0;
 static int FslOverrideOutputType=-1;
 
@@ -56,7 +65,7 @@ const char* FslFileTypeString(int filetype)
 }
 
 
-int FslIsValidFileType(int filetype)
+static int FslIsValidFileType(int filetype)
 {
   if ( (filetype!=FSL_TYPE_ANALYZE)    && (filetype!=FSL_TYPE_ANALYZE_GZ) &&
        (filetype!=FSL_TYPE_NIFTI)      && (filetype!=FSL_TYPE_NIFTI_GZ) &&
@@ -85,7 +94,7 @@ int FslBaseFileType(int filetype)
 }
 
 
-int FslGetFileType2(const FSLIO *fslio, int quiet)
+static int FslGetFileType2(const FSLIO *fslio, int quiet)
 {
   if (fslio==NULL)  FSLIOERR("FslGetFileType: Null pointer passed for FSLIO");
   if ( (fslio->file_mode==FSL_TYPE_MINC) || (fslio->file_mode==FSL_TYPE_MINC_GZ) ) {
@@ -188,7 +197,7 @@ int FslGetEnvOutputType(void)
 }
 
 
-int FslFileType(const char* fname)
+static int FslFileType(const char* fname)
 {
   /* return type is FSL_TYPE_* or -1 to indicate undetermined */
   /* use name as first priority but if that is ambiguous then resolve using environment */
@@ -222,7 +231,7 @@ int FslFileType(const char* fname)
 /************************************************************
  * FslGetReadFileType
  ************************************************************/
-/*! \fn int FslGetReadFileType(const FSLIO *fslio)
+/*! \fn static int FslGetReadFileType(const FSLIO *fslio)
     \brief  return the best estimate of the true file type
 
   This function is used to return the best estimate of the true file type once
@@ -387,7 +396,7 @@ void FslSetInit(FSLIO* fslio)
 
 
 
-void FslInit4Write(FSLIO* fslio, const char* filename, int ft)
+static void FslInit4Write(FSLIO* fslio, const char* filename, int ft)
 {
   /* ft determines filetype if ft>=0*/
   int imgtype;
@@ -500,7 +509,7 @@ void FslCloneHeader(FSLIO *dest, const FSLIO *src)
 }
 
 
-int  fsl_fileexists(const char* fname)
+static int  fsl_fileexists(const char* fname)
 {
    znzFile fp;
    fp = znzopen( fname , "rb" , 1 ) ;
@@ -557,7 +566,7 @@ int FslCheckForMultipleFileNames(const char* filename)
 
 
 
-int check_for_multiple_filenames(const char* filename)
+static int check_for_multiple_filenames(const char* filename)
 {
   char *basename, *tmpname;
   char *otype;
@@ -1361,37 +1370,6 @@ void FslSetAuxFile(FSLIO *fslio,const char *aux_file)
   }
 }
 
-
-void FslSetVoxUnits(FSLIO *fslio, const char *units)
-{
-  int unitcode=0;
-  if (fslio==NULL)  FSLIOERR("FslSetVoxUnits: Null pointer passed for FSLIO");
-  if (fslio->niftiptr!=NULL) {
-    if (strcmp(units,nifti_units_string(NIFTI_UNITS_METER))==0) {
-      unitcode = NIFTI_UNITS_METER;
-    } else if (strcmp(units,nifti_units_string(NIFTI_UNITS_MM))==0) {
-      unitcode = NIFTI_UNITS_MM;
-    } else if (strcmp(units,nifti_units_string(NIFTI_UNITS_MICRON))==0) {
-      unitcode = NIFTI_UNITS_MICRON;
-    }
-    fslio->niftiptr->xyz_units  = unitcode;
-  }
-  if (fslio->mincptr!=NULL) {
-    fprintf(stderr,"Warning:: Minc is not yet supported\n");
-  }
-}
-
-
-void FslGetVoxUnits(FSLIO *fslio, char *units)
-{
-  if (fslio==NULL)  FSLIOERR("FslGetVoxUnits: Null pointer passed for FSLIO");
-  if (fslio->niftiptr!=NULL) {
-    strcpy(units,nifti_units_string(fslio->niftiptr->xyz_units));
-  }
-  if (fslio->mincptr!=NULL) {
-    fprintf(stderr,"Warning:: Minc is not yet supported\n");
-  }
-}
 
 void FslSetTimeUnits(FSLIO *fslio, const char *units)
 {
