@@ -70,38 +70,62 @@ typedef struct {
 } afni_xml_control;
 
 
+#ifndef CIF_API
+   #if defined(_WIN32) || defined(__CYGWIN__)
+      #if defined(CIFTI_BUILD_SHARED)
+      #ifdef __GNUC__
+         #define CIF_API __attribute__ ((dllexport))
+      #else
+         #define CIF_API __declspec( dllexport )
+      #endif
+      #elif defined(CIFTI_USE_SHARED)
+      #ifdef __GNUC__
+         #define CIF_API __attribute__ ((dllimport))
+      #else
+         #define CIF_API __declspec( dllimport )
+      #endif
+      #else
+      #define CIF_API
+      #endif
+   #elif (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
+      #define CIF_API __attribute__ ((visibility ("default")))
+   #else
+      #define CIF_API
+   #endif
+#endif
+
 /* --------------------------- prototypes --------------------------------- */
 
 /* main interface */
-afni_xml_list axml_read_buf (const char * buf_in, int64_t bin_len);
-afni_xml_list axml_read_file(const char * fname, int read_data);
+CIF_API afni_xml_list axml_read_buf (const char * buf_in, int64_t bin_len);
+CIF_API afni_xml_list axml_read_file(const char * fname, int read_data);
 
-int axml_disp_xlist( const char *mesg, afni_xml_list * axlist, int verb);
-int axml_disp_xml_t( const char *mesg, afni_xml_t * ax, int indent, int verb);
+CIF_API int axml_disp_xlist( const char *mesg, afni_xml_list * axlist, int verb);
+CIF_API int axml_disp_xml_t( const char *mesg, afni_xml_t * ax, int indent, int verb);
 
 
 /* create/free */
-afni_xml_t * new_afni_xml   (const char * name);
-int          axml_add_attrs (afni_xml_t * ax, const char ** attr);
-int          axml_free_xml_t(afni_xml_t * ax);
-int          axml_free_xlist(afni_xml_list * axlist);
+CIF_API afni_xml_t * new_afni_xml   (const char * name);
+CIF_API int          axml_add_attrs (afni_xml_t * ax, const char ** attr);
+CIF_API int          axml_free_xml_t(afni_xml_t * ax);
+CIF_API int          axml_free_xlist(afni_xml_list * axlist);
 
-char * axml_attr_value(afni_xml_t * ax, const char * name);
-int    axml_recur(int(*func)(FILE*,afni_xml_t*,int), afni_xml_t * ax);
-afni_xml_t * axml_recur_find_xml(int (*func)(afni_xml_t *, int), afni_xml_t * ax,
+CIF_API char * axml_attr_value(afni_xml_t * ax, const char * name);
+CIF_API int    axml_recur(int(*func)(FILE*,afni_xml_t*,int), afni_xml_t * ax);
+CIF_API afni_xml_t * axml_recur_find_xml(int (*func)(afni_xml_t *, int), afni_xml_t * ax,
                                  int depth, int max_depth);
 
 
 /* control API */
-int    axml_set_verb        ( int val  );
-int    axml_get_verb        ( void     );
-int    axml_set_dstore      ( int val  );
-int    axml_get_dstore      ( void     );
-int    axml_set_indent      ( int val  );
-int    axml_get_indent      ( void     );
-int    axml_set_buf_size    ( int val  );
-int    axml_get_buf_size    ( void     );
-int    axml_set_wstream     ( FILE *fp );
-FILE * axml_get_wstream     ( void     );
+CIF_API int    axml_set_verb        ( int val  );
+CIF_API int    axml_get_verb        ( void     );
+CIF_API int    axml_set_dstore      ( int val  );
+CIF_API int    axml_get_dstore      ( void     );
+CIF_API int    axml_set_indent      ( int val  );
+CIF_API int    axml_get_indent      ( void     );
+CIF_API int    axml_set_buf_size    ( int val  );
+CIF_API int    axml_get_buf_size    ( void     );
+CIF_API int    axml_set_wstream     ( FILE *fp );
+CIF_API FILE * axml_get_wstream     ( void     );
 
 #endif /* AFNI_XML_H */
