@@ -156,6 +156,10 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow
                         PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
 
+  # The NIFTI-1 library carries the same ASCII reader.
+  add_test( NAME ${TEST_PREFIX}_tool_ascii_dup_attr COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/dup_attr.nia )
+  set_tests_properties( ${TEST_PREFIX}_tool_ascii_dup_attr PROPERTIES PASS_REGULAR_EXPRESSION "dup2.nia" )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
