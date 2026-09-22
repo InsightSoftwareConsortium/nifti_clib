@@ -51,6 +51,26 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
             PROPERTIES PASS_REGULAR_EXPRESSION "<MapName>demo</MapName>"
                        FAIL_REGULAR_EXPRESSION "no CIFTI extension" )
 
+  # A read failure must be reported, not taken for the end of the document.
+  # The input is a directory, which opens on POSIX and fails at the first
+  # read; Windows refuses the open instead, so there is no read to fail.
+  if( NOT WIN32 )
+    add_test( NAME ${TEST_PREFIX}_xml_read_error
+              COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}afni_xml_tool>
+                      -input ${CMAKE_CURRENT_LIST_DIR}/testdata )
+    set_tests_properties( ${TEST_PREFIX}_xml_read_error
+              PROPERTIES PASS_REGULAR_EXPRESSION "failed to read XML file" )
+  endif()
+
+  # A readable document must still parse, and must not report a read error.
+  add_test( NAME ${TEST_PREFIX}_xml_read_ok
+            COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}afni_xml_tool>
+                    -input ${CMAKE_CURRENT_LIST_DIR}/testdata/mim_known_child.xml
+                    -verb 2 )
+  set_tests_properties( ${TEST_PREFIX}_xml_read_ok
+            PROPERTIES PASS_REGULAR_EXPRESSION "xlist read"
+                       FAIL_REGULAR_EXPRESSION "failed to read XML file" )
+
   # An extension payload that fills esize-8 with no NUL must not be read
   # past its end; the regex pins that the payload is still parsed.
   add_test( NAME ${TEST_PREFIX}_tool_unterminated_cext
