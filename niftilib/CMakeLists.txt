@@ -47,6 +47,15 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
     COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti_short_read_test>
     )
 
+  if(FSLSTYLE_REJECT_COMPLEX)
+    add_executable(${NIFTI_PACKAGE_PREFIX}nifti_reject_complex_test nifti_reject_complex_test.c)
+    target_link_libraries(${NIFTI_PACKAGE_PREFIX}nifti_reject_complex_test ${NIFTI_NIFTILIB_NAME})
+    add_test(
+      NAME nifti_reject_complex
+      COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti_reject_complex_test>
+      )
+  endif()
+
   add_executable(nifti_second_test_program nifti_tester002.c)
   target_link_libraries(nifti_second_test_program ${NIFTI_PACKAGE_PREFIX}niftiio )
 
