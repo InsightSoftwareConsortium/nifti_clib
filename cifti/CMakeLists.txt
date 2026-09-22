@@ -50,4 +50,13 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
                     -eval_cext -eval_type show_summary )
   set_tests_properties( ${TEST_PREFIX}_tool_unterminated_cext
             PROPERTIES PASS_REGULAR_EXPRESSION "MapName : demo" )
+
+  # Nesting past AXML_MAX_DEPTH must stay inside the skip block rather than
+  # walk off the fixed stack; the regex pins that the rest still parses.
+  add_test( NAME ${TEST_PREFIX}_deep_nesting
+            COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}cifti_tool>
+                    -as_cext -eval_cext -eval_type show_summary
+                    -input ${CMAKE_CURRENT_LIST_DIR}/testdata/deep_nesting.xml )
+  set_tests_properties( ${TEST_PREFIX}_deep_nesting
+            PROPERTIES PASS_REGULAR_EXPRESSION "BrainModel" )
 endif()
