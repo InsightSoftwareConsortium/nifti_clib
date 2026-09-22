@@ -84,6 +84,12 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   set_tests_properties(${TEST_PREFIX}_header_check PROPERTIES LABELS NEEDS_DATA)
   set_tests_properties(${TEST_PREFIX}_nim_check PROPERTIES LABELS NEEDS_DATA)
 
+  # The ASCII reader frees a repeated attribute's previous value; the
+  # sanitize-clang-linux leg's leak check fails the test if it does not.
+  add_test( NAME ${TEST_PREFIX}_tool_ascii_dup_attr COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/dup_attr.nia )
+  set_tests_properties( ${TEST_PREFIX}_tool_ascii_dup_attr PROPERTIES PASS_REGULAR_EXPRESSION "dup2.nia"
+                        FAIL_REGULAR_EXPRESSION "LeakSanitizer|leaked in" )
+
   #The help screens always return 1; add_test( NAME ${NIFTI_PACKAGE_PREFIX}nifti1_tool1_help COMMAND $<TARGET_FILE:${TOOL_NAME}>)
   add_test( NAME ${TEST_PREFIX}_tool_n1  COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_hdr -infile ${CMAKE_CURRENT_BINARY_DIR}/n1 )
   add_test( NAME ${TEST_PREFIX}_tool_n2  COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_hdr -infile ${CMAKE_CURRENT_BINARY_DIR}/n2 )
