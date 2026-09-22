@@ -41,4 +41,13 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
                     -input ${CMAKE_CURRENT_LIST_DIR}/testdata/mim_known_child.xml )
   set_tests_properties( ${TEST_PREFIX}_mim_summary_known_child
                         PROPERTIES PASS_REGULAR_EXPRESSION "BrainModel" )
+
+  # An extension payload that fills esize-8 with no NUL must not be read
+  # past its end; the regex pins that the payload is still parsed.
+  add_test( NAME ${TEST_PREFIX}_tool_unterminated_cext
+            COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}cifti_tool>
+                    -input ${CMAKE_CURRENT_LIST_DIR}/testdata/cext_unterminated.nii
+                    -eval_cext -eval_type show_summary )
+  set_tests_properties( ${TEST_PREFIX}_tool_unterminated_cext
+            PROPERTIES PASS_REGULAR_EXPRESSION "MapName : demo" )
 endif()
