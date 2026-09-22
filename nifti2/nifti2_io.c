@@ -6028,13 +6028,6 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       znzclose(fp);  free(hfile);  return NULL;
    }
 
-   #ifdef REJECT_COMPLEX
-   if ((nim->datatype == DT_COMPLEX64) || (nim->datatype == DT_COMPLEX128) || (nim->datatype == DT_COMPLEX256)) {
-      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX64): use fslcomplex to manipulate: %s\n", hname);
-      exit(13);
-    }
-    #endif
-
    if( nim == NULL ){
       znzclose( fp ) ;                                   /* close the file */
       if( g_opts.debug > 0 )
@@ -6042,6 +6035,13 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       free(hfile); /* had to save this for debug message */
       return NULL;
    }
+
+   #ifdef REJECT_COMPLEX
+   if ((nim->datatype == DT_COMPLEX64) || (nim->datatype == DT_COMPLEX128) || (nim->datatype == DT_COMPLEX256)) {
+      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX64): use fslcomplex to manipulate: %s\n", hname);
+      exit(13);
+    }
+    #endif
 
    if( g_opts.debug > 3 ){
       fprintf(stderr,"+d nifti_image_read(), have nifti image:\n");
