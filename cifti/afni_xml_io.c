@@ -35,7 +35,9 @@ static int64_t text_to_f64(double * result, const char * text, int64_t nvals);
 
 /* read a complete CIFTI dataset, returning nifti and and xml pieces
 
-   text data is converted to binary, when known
+   text data is converted to binary, when known; on return, even on
+   failure, the caller frees *nim_out with nifti_image_free() and
+   *ax_out with axml_free_xml_t()
  */
 int axio_read_cifti_file(const char * fname, int get_ndata,
                          nifti_image ** nim_out, afni_xml_t ** ax_out)
@@ -75,7 +77,8 @@ int axio_read_cifti_file(const char * fname, int get_ndata,
 }
 
 
-/* read file into a single, allocated afni_xml_t struct */
+/* read buffer into a single, allocated afni_xml_t struct;
+   the caller frees the result with axml_free_xml_t() */
 afni_xml_t * axio_read_buf(const char * buf, int64_t blen)
 {
    afni_xml_list   xlist;
@@ -88,7 +91,8 @@ afni_xml_t * axio_read_buf(const char * buf, int64_t blen)
    return xlist_to_ax1(&xlist);
 }
 
-/* read file into a single, allocated afni_xml_t struct */
+/* read file into a single, allocated afni_xml_t struct;
+   the caller frees the result with axml_free_xml_t() */
 afni_xml_t * axio_read_file(const char * fname)
 {
    afni_xml_list   xlist;
