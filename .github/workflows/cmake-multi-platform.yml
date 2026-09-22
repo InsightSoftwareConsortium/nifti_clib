@@ -230,3 +230,47 @@ jobs:
         -S ${{ github.workspace }}
     - name: Build
       run: cmake --build ${{ github.workspace }}/build
+
+  windows:
+    # Twelve source files carry WIN32 or _MSC_VER guards and nothing has
+    # compiled them for as long as the workflows have existed, so a change
+    # that breaks the Windows path is invisible until a consumer reports
+    # it. zlib comes from vcpkg because the project requires it.
+    name: windows-latest msvc ${{ matrix.linkage }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - linkage: static
+            shared: "OFF"
+            triplet: x64-windows-static
+          - linkage: shared
+            shared: "ON"
+            triplet: x64-windows
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install zlib and expat
+      run: vcpkg install zlib:${{ matrix.triplet }} expat:${{ matrix.triplet }}
+    - name: Configure CMake
+      shell: pwsh
+      run: |
+        $toolchain = Join-Path $env:VCPKG_INSTALLATION_ROOT 'scripts/buildsystems/vcpkg.cmake'
+        Write-Host "vcpkg toolchain: $toolchain"
+        if (-not (Test-Path $toolchain)) { throw "toolchain file not found: $toolchain" }
+        cmake -B "${{ github.workspace }}/build" `
+          -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} `
+          -DBUILD_SHARED_LIBS=${{ matrix.shared }} `
+          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="${{ github.workspace }}/build/bin" `
+          -DNIFTI_BUILD_APPLICATIONS=ON `
+          -DUSE_NIFTI2_CODE=ON `
+          -DUSE_CIFTI_CODE=ON `
+          -S "${{ github.workspace }}"
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build --config Release
+    - name: Test
+      working-directory: ${{ github.workspace }}/build
+      # A test that cannot find a DLL can raise a modal dialog and block the
+      # runner rather than exit, so every test carries a timeout.
+      run: ctest --build-config Release --output-on-failure --no-tests=ignore --timeout 120
