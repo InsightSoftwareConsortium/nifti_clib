@@ -193,6 +193,10 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_disp_nim_bad_dim0 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n2_bad_dim0.nii )
   set_tests_properties( ${TEST_PREFIX}_tool_disp_nim_bad_dim0 PROPERTIES PASS_REGULAR_EXPRESSION "bad dim\\[0\\]" )
 
+  # A nifti_1_header is swapped at NIFTI-1 width whatever its magic claims.
+  add_test( NAME ${TEST_PREFIX}_tool_check_hdr_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -check_hdr -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_magic_n2.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_check_hdr_magic_n2 PROPERTIES PASS_REGULAR_EXPRESSION "header IS GOOD" )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
