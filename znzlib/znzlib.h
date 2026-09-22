@@ -145,6 +145,10 @@ ZNZ_API int znzputs(const char *str, znzFile file);
 #ifdef COMPILE_NIFTIUNUSED_CODE
 ZNZ_API char * znzgets(char* str, int size, znzFile file);
 
+ZNZ_API int znzflush(znzFile file);
+
+ZNZ_API int znzeof(znzFile file);
+
 ZNZ_API int znzputc(int c, znzFile file);
 
 ZNZ_API int znzgetc(znzFile file);
