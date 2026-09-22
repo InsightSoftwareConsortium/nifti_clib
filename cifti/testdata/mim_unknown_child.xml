@@ -1,0 +1,7 @@
+<CIFTI Version="2">
+  <Matrix>
+    <MatrixIndicesMap AppliesToMatrixDimension="0" IndicesMapToDataType="CIFTI_INDEX_TYPE_BRAIN_MODELS">
+      <UnrecognizedElement/>
+    </MatrixIndicesMap>
+  </Matrix>
+</CIFTI>
