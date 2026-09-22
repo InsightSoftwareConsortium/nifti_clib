@@ -238,6 +238,10 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
     add_test( NAME ${TEST_PREFIX}_nii_cmp_selftest COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/nii_cmp_selftest.sh ${NIFTI_TEST_SCRIPT_DIR} )
   endif()
 
+  # Reading an ASCII header through the NIFTI-2 reader releases the image
+  # it built; the leak is what the memcheck and sanitizer legs observe.
+  add_test( NAME ${TEST_PREFIX}_tool_disp_hdr2_ascii COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_hdr2 -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/dup_attr.nia )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
