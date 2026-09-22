@@ -49,7 +49,7 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
                     -disp_cext )
   set_tests_properties( ${TEST_PREFIX}_tool_cext_not_first
             PROPERTIES PASS_REGULAR_EXPRESSION "<MapName>demo</MapName>"
-                       FAIL_REGULAR_EXPRESSION "no CIFTI extension" )
+                       FAIL_REGULAR_EXPRESSION "no CIFTI extension|ERROR: (Address|Leak)Sanitizer|runtime error" )
 
   # An extension payload that fills esize-8 with no NUL must not be read
   # past its end; the regex pins that the payload is still parsed.
