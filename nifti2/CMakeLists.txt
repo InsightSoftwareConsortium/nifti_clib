@@ -233,6 +233,11 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
     add_test( NAME ${TEST_PREFIX}_mod_hdr_errpaths COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/mod_header_errpaths.sh $<TARGET_FILE:${TOOL_NAME}> $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti1_tool> )
   endif()
 
+  if(UNIX AND NIFTI_SHELL_SCRIPT_TESTS)
+    # Needs no external data, so it carries no NEEDS_DATA label.
+    add_test( NAME ${TEST_PREFIX}_nii_cmp_selftest COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/nii_cmp_selftest.sh ${NIFTI_TEST_SCRIPT_DIR} )
+  endif()
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
