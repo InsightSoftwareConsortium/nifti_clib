@@ -229,6 +229,14 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow
                         PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
 
+  # Only compiled when the FSL name-conflict path is built.
+  if(FSLSTYLE_NAME_CONFLICTS)
+    add_test( NAME ${TEST_PREFIX}_ambiguous_hdrname
+              COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:${TOOL_NAME}>
+                      -DDIR=${CMAKE_CURRENT_BINARY_DIR}/ambig
+                      -P ${CMAKE_CURRENT_LIST_DIR}/ambiguous_hdrname.cmake )
+  endif()
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
