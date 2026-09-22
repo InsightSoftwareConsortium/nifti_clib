@@ -98,12 +98,12 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake valgrind help2man
+        sudo apt-get install -y cmake valgrind help2man clang-tools
 
     - name: Install Dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake sed help2man
+        brew install cmake gnu-sed help2man
 
     - name: Set Compiler and Flags
       run: |
