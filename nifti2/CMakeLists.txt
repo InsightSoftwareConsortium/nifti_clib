@@ -228,6 +228,11 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
                       -P ${CMAKE_CURRENT_LIST_DIR}/ambiguous_hdrname.cmake )
   endif()
 
+  if(UNIX AND NIFTI_SHELL_SCRIPT_TESTS)
+    # Reaches the failure paths that have to release the header before returning.
+    add_test( NAME ${TEST_PREFIX}_mod_hdr_errpaths COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/mod_header_errpaths.sh $<TARGET_FILE:${TOOL_NAME}> $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti1_tool> )
+  endif()
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
