@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include "fslio.h"
 
 static int check(const char *what, size_t got, size_t want)
@@ -26,10 +28,12 @@ int main(void)
   nim.nx = 64; nim.ny = 64; nim.nz = 32;
   failures += check("64x64x32", FslGetVolSize(&fslio), (size_t)64*64*32);
 
+#if SIZE_MAX > 0xffffffffU
   /* 2048*2048*1024 == 2^32: zero when the product is formed in int. */
   nim.nx = 2048; nim.ny = 2048; nim.nz = 1024;
   failures += check("2048x2048x1024", FslGetVolSize(&fslio),
                     (size_t)2048*2048*1024);
+#endif
 
   /* 3000*3000*300 == 2,700,000,000: negative when formed in int. */
   nim.nx = 3000; nim.ny = 3000; nim.nz = 300;
