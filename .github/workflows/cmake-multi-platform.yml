@@ -70,3 +70,190 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
 
+  minimal:
+    # The configuration a downstream project vendoring only the core
+    # reader selects.  Nothing else in the matrix proves the tree still
+    # configures with the optional subdirectories switched off.
+    name: minimal configuration (znzlib + niftilib only)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ github.workspace }}/build
+        -DCMAKE_BUILD_TYPE=Release
+        -DUSE_NIFTI2_CODE=OFF
+        -DUSE_NIFTICDF_CODE=OFF
+        -DUSE_CIFTI_CODE=OFF
+        -DUSE_FSL_CODE=OFF
+        -DNIFTI_BUILD_APPLICATIONS=OFF
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build
+    - name: Test
+      working-directory: ${{ github.workspace }}/build
+      # This configuration registers no tests at all, because the test
+      # programs live with the applications that are switched off here.
+      # --no-tests=ignore keeps that from being an error; the value of
+      # this job is that the tree still configures and builds.
+      run: ctest --output-on-failure --no-tests=ignore
+
+  oldest-cmake:
+    # Guards cmake_minimum_required.  Every other runner carries a
+    # recent CMake, so a policy or command that needs a newer release
+    # than the project claims to support is invisible to them.
+    # PR #30 was exactly that: CMP0169 does not exist before 3.30 and
+    # setting it unconditionally was fatal on Ubuntu 24.04's 3.28.
+    name: oldest supported CMake
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y cmake ninja-build libexpat1-dev zlib1g-dev
+    - name: Show CMake version
+      run: cmake --version
+    - name: Configure CMake
+      run: >
+        cmake -G Ninja -B ${{ github.workspace }}/build
+        -DCMAKE_BUILD_TYPE=Release
+        -DUSE_CIFTI_CODE=ON
+        -DUSE_FSL_CODE=ON
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build
+    - name: Test
+      working-directory: ${{ github.workspace }}/build
+      run: ctest --output-on-failure
+
+  exported-symbols:
+    # The exported symbol set is the ABI.  Several open changes assert
+    # that they leave it untouched and nothing verified that claim, so
+    # this job diffs it against a committed baseline.  An intentional
+    # change to the ABI updates the baseline in the same commit, which
+    # makes the change visible in review rather than implicit.
+    name: exported symbol baseline
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y libexpat1-dev zlib1g-dev ninja-build
+    - name: Configure CMake
+      run: >
+        cmake -G Ninja -B ${{ github.workspace }}/build
+        -DCMAKE_BUILD_TYPE=Release
+        -DBUILD_SHARED_LIBS=ON
+        -DUSE_CIFTI_CODE=ON
+        -DUSE_FSL_CODE=ON
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build
+    - name: Collect exported symbols
+      run: |
+        bash cmake/collect_exported_symbols.sh \
+             "${{ github.workspace }}/build" \
+             /tmp/exported_symbols.txt
+    - name: Compare against the committed baseline
+      run: |
+        if ! diff -u cmake/exported_symbols_linux.txt /tmp/exported_symbols.txt; then
+          echo ""
+          echo "The exported symbol set changed."
+          echo "If that is intended, update cmake/exported_symbols_linux.txt"
+          echo "in this commit so the ABI change is visible in review:"
+          echo "  bash cmake/collect_exported_symbols.sh <build-dir> cmake/exported_symbols_linux.txt"
+          exit 1
+        fi
+        echo "Exported symbols match the baseline."
+
+  missing-declarations:
+    # A function defined without a prior declaration is either missing
+    # from its header or should have been static. Both shapes reached
+    # master before, because the flag is in the project's clean set but
+    # nothing makes it fatal, and a warning in a build that passes is
+    # not read.
+    #
+    # Promoting this one flag needs no preparatory cleanup. The whole
+    # NIFTI_WARNINGS_AS_ERRORS set is still blocked by
+    # -Wmaybe-uninitialized in fslio.c, and waiting for that would
+    # leave this uncovered meanwhile.
+    name: no undeclared external functions (FSLSTYLE=${{ matrix.fslstyle }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fslstyle: ["OFF", "ON"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y libexpat1-dev zlib1g-dev ninja-build
+    - name: Configure CMake
+      run: >
+        cmake -G Ninja -B ${{ github.workspace }}/build
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_C_FLAGS=-Werror=missing-declarations
+        -DNIFTI_BUILD_APPLICATIONS=ON
+        -DUSE_CIFTI_CODE=ON
+        -DUSE_FSL_CODE=ON
+        -DFSLSTYLE=${{ matrix.fslstyle }}
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build
+
+  windows:
+    # Twelve source files carry WIN32 or _MSC_VER guards and nothing has
+    # compiled them for as long as the workflows have existed, so a change
+    # that breaks the Windows path is invisible until a consumer reports
+    # it. zlib comes from vcpkg because the project requires it.
+    name: windows-latest msvc ${{ matrix.linkage }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - linkage: static
+            shared: "OFF"
+            triplet: x64-windows-static
+          - linkage: shared
+            shared: "ON"
+            triplet: x64-windows
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install zlib and expat
+      run: vcpkg install zlib:${{ matrix.triplet }} expat:${{ matrix.triplet }}
+    - name: Configure CMake
+      shell: pwsh
+      run: |
+        $toolchain = Join-Path $env:VCPKG_INSTALLATION_ROOT 'scripts/buildsystems/vcpkg.cmake'
+        Write-Host "vcpkg toolchain: $toolchain"
+        if (-not (Test-Path $toolchain)) { throw "toolchain file not found: $toolchain" }
+        cmake -B "${{ github.workspace }}/build" `
+          -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} `
+          -DBUILD_SHARED_LIBS=${{ matrix.shared }} `
+          -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="${{ github.workspace }}/build/bin" `
+          -DNIFTI_BUILD_APPLICATIONS=ON `
+          -DUSE_NIFTI2_CODE=ON `
+          -DUSE_CIFTI_CODE=ON `
+          -S "${{ github.workspace }}"
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build --config Release
+    - name: Test
+      working-directory: ${{ github.workspace }}/build
+      # A test that cannot find a DLL can raise a modal dialog and block the
+      # runner rather than exit, so every test carries a timeout.
+      run: ctest --build-config Release --output-on-failure --no-tests=ignore --timeout 120
+  workflow-triggers:
+    # A branch filter naming a branch that does not exist leaves the
+    # workflow configured but never scheduled, which is indistinguishable
+    # from one that runs and passes: no red check appears because no check
+    # appears at all. build.yml sat dead behind `branches: [ main ]` on a
+    # repository whose branch is master, and nothing detected it.
+    name: workflow triggers can match a branch
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y python3-yaml
+    - name: Check the branch filters
+      env:
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: python3 .github/check_workflow_triggers.py
