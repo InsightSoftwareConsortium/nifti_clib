@@ -40,6 +40,13 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_executable(nifti_first_test_program nifti_tester001.c)
   target_link_libraries(nifti_first_test_program ${NIFTI_PACKAGE_PREFIX}niftiio )
 
+  add_executable(${NIFTI_PACKAGE_PREFIX}nifti_short_read_test nifti_short_read_test.c)
+  target_link_libraries(${NIFTI_PACKAGE_PREFIX}nifti_short_read_test ${NIFTI_NIFTILIB_NAME})
+  add_test(
+    NAME nifti_short_read_rejected
+    COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti_short_read_test>
+    )
+
   add_executable(nifti_second_test_program nifti_tester002.c)
   target_link_libraries(nifti_second_test_program ${NIFTI_PACKAGE_PREFIX}niftiio )
 
