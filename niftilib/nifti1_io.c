@@ -4326,10 +4326,13 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
 
    #ifdef REJECT_COMPLEX
    if ((nim->datatype == DT_COMPLEX64) || (nim->datatype == DT_COMPLEX128) || (nim->datatype == DT_COMPLEX256)) {
-      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX64): use fslcomplex to manipulate: %s\n", hname);
-      exit(13);
-    }
-    #endif
+      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX): use fslcomplex to manipulate: %s\n", hname);
+      nifti_image_free(nim);
+      znzclose(fp);
+      free(hfile);
+      return NULL;
+   }
+   #endif
 
    if( g_opts.debug > 3 ){
       fprintf(stderr,"+d nifti_image_read(), have nifti image:\n");
