@@ -196,3 +196,37 @@ jobs:
           exit 1
         fi
         echo "Exported symbols match the baseline."
+
+  missing-declarations:
+    # A function defined without a prior declaration is either missing
+    # from its header or should have been static. Both shapes reached
+    # master before, because the flag is in the project's clean set but
+    # nothing makes it fatal, and a warning in a build that passes is
+    # not read.
+    #
+    # Promoting this one flag needs no preparatory cleanup. The whole
+    # NIFTI_WARNINGS_AS_ERRORS set is still blocked by
+    # -Wmaybe-uninitialized in fslio.c, and waiting for that would
+    # leave this uncovered meanwhile.
+    name: no undeclared external functions (FSLSTYLE=${{ matrix.fslstyle }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fslstyle: ["OFF", "ON"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y libexpat1-dev zlib1g-dev ninja-build
+    - name: Configure CMake
+      run: >
+        cmake -G Ninja -B ${{ github.workspace }}/build
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_C_FLAGS=-Werror=missing-declarations
+        -DNIFTI_BUILD_APPLICATIONS=ON
+        -DUSE_CIFTI_CODE=ON
+        -DUSE_FSL_CODE=ON
+        -DFSLSTYLE=${{ matrix.fslstyle }}
+        -S ${{ github.workspace }}
+    - name: Build
+      run: cmake --build ${{ github.workspace }}/build
