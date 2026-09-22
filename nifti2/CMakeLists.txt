@@ -197,6 +197,15 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_check_hdr_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -check_hdr -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_magic_n2.nii )
   set_tests_properties( ${TEST_PREFIX}_tool_check_hdr_magic_n2 PROPERTIES PASS_REGULAR_EXPRESSION "header IS GOOD" )
 
+  # The tool's own header copies are swapped at their own width too. Both
+  # invocations rewrite the file, so each works on a copy.
+  add_test( NAME ${TEST_PREFIX}_tool_mod_hdr_magic_n2_setup COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_magic_n2.nii ${CMAKE_CURRENT_BINARY_DIR}/mod_magic_n2.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_mod_hdr_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -mod_hdr -mod_field descrip hello -overwrite -infiles ${CMAKE_CURRENT_BINARY_DIR}/mod_magic_n2.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_mod_hdr_magic_n2 PROPERTIES DEPENDS ${TEST_PREFIX}_tool_mod_hdr_magic_n2_setup )
+  add_test( NAME ${TEST_PREFIX}_tool_swap_as_old_magic_n2_setup COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_magic_n2.nii ${CMAKE_CURRENT_BINARY_DIR}/swap_magic_n2.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_swap_as_old_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -swap_as_old -overwrite -infiles ${CMAKE_CURRENT_BINARY_DIR}/swap_magic_n2.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_swap_as_old_magic_n2 PROPERTIES DEPENDS ${TEST_PREFIX}_tool_swap_as_old_magic_n2_setup )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
