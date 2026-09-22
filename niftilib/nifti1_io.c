@@ -5773,6 +5773,7 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 
 #ifdef PIGZ
 #ifdef HAVE_ZLIB
+#if 0  /* unused here: identical to doPigz below */
 int doPigz2(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
 	FILE *pigzPipe;
 	char command[768];
@@ -5804,8 +5805,9 @@ int doPigz2(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list
 	free(fp);
 	return 0;
 }
+#endif
 
-int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
+static int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
 	FILE *pigzPipe;
 	char command[768];
     strcpy(command, "pigz" );
