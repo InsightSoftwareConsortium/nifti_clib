@@ -189,6 +189,10 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
       endif()
   endif()
 
+  # A dim[0] outside 1..7 must be refused rather than used to index dim[].
+  add_test( NAME ${TEST_PREFIX}_tool_disp_nim_bad_dim0 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n2_bad_dim0.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_disp_nim_bad_dim0 PROPERTIES PASS_REGULAR_EXPRESSION "bad dim\\[0\\]" )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
