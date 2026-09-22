@@ -206,6 +206,15 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_swap_as_old_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -swap_as_old -overwrite -infiles ${CMAKE_CURRENT_BINARY_DIR}/swap_magic_n2.nii )
   set_tests_properties( ${TEST_PREFIX}_tool_swap_as_old_magic_n2 PROPERTIES DEPENDS ${TEST_PREFIX}_tool_swap_as_old_magic_n2_setup )
 
+  # Dimensions whose product overflows the voxel count are refused.
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_overflow.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n2_overflow.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_volsize_overflow COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_volsize.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 ${TEST_PREFIX}_tool_reject_nvox_overflow_n2
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] overflows the voxel count" )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
