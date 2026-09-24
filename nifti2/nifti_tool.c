@@ -864,7 +864,7 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
       return 1;
    }
    cp = opts->command + len;
-   remain -= len;
+   remain -= (size_t)len;
 
    /* get the rest, with special attention to input files */
    for( int ac = 1; ac < argc; ac++ )
@@ -885,11 +885,11 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
       if( has_space ) len = snprintf(cp, remain, " '%s'", argv[ac]);
       else            len = snprintf(cp, remain, " %s",   argv[ac]);
 
-      if( len < 0 || len >= remain ) {
+      if( len < 0 || (size_t)len >= remain ) {
          fprintf(stderr,"FCS: error parsing command, continuing...\n");
          return 1;
       }
-      remain -= len;
+      remain -= (size_t)len;
 
       /* infiles is okay, but after the *next* argument, we may skip files */
       /* (danger, will robinson!  hack alert!) */
@@ -922,7 +922,7 @@ int add_int(int_list * ilist, int val)
 {
    if( ilist->len == 0 ) ilist->list = NULL;  /* just to be safe */
    ilist->len++;
-   ilist->list = (int *)realloc(ilist->list,ilist->len*sizeof(int));
+   ilist->list = (int *)realloc(ilist->list, (size_t)ilist->len * sizeof(int));
    if( ! ilist->list ){
       fprintf(stderr,"** failed to alloc %d (int *) elements\n",ilist->len);
       return -1;
@@ -943,7 +943,7 @@ int add_string(str_list * slist, const char * str)
 {
    if( slist->len == 0 ) slist->list = NULL;  /* just to be safe */
    slist->len++;
-   slist->list = (const char **)realloc(slist->list,slist->len*sizeof(char *));
+   slist->list = (const char **)realloc(slist->list, (size_t)slist->len * sizeof(char *));
    if( ! slist->list ){
       fprintf(stderr,"** failed to alloc %d (char *) elements\n",slist->len);
       return -1;
@@ -2284,6 +2284,7 @@ int act_add_exts( nt_opts * opts )
                     opts->etypes.list[ec]);
 
          if( nifti_add_extension(nim, ext, elen, opts->etypes.list[ec]) ){
+            free(edata);   /* may hold the file contents read just above */
             nifti_image_free(nim);
             return 1;
          }
@@ -2357,17 +2358,17 @@ static char * read_file_text(const char * filename, int * length)
 
    /* allocate the bytes, and fill them with the file contents */
 
-   text = (char *)malloc(len64 * sizeof(char));
+   text = (char *)malloc((size_t)len64 * sizeof(char));
    if( !text ) {
       fprintf(stderr,"** RFT: failed to allocate %" PRId64 " bytes\n", len64);
       fclose(fp);
       return NULL;
    }
 
-   bytes = fread(text, sizeof(char), len64, fp);
+   bytes = fread(text, sizeof(char), (size_t)len64, fp);
    fclose(fp); /* in any case */
 
-   if( bytes != len64 ) {
+   if( bytes != (size_t)len64 ) {
       fprintf(stderr,"** RFT: read only %zu of %" PRId64 " bytes from %s\n",
                      bytes, len64, filename);
       free(text);
@@ -2561,7 +2562,7 @@ int remove_ext_list( nifti_image * nim, const char ** elist, int len )
    if( g_debug > 2 )
       fprintf(stderr,"+d removing %d exts from '%s'\n", len, nim->fname );
 
-   if( ! (marks = (int *)calloc(nim->num_ext, sizeof(int))) ) {
+   if( ! (marks = (int *)calloc((size_t)(nim->num_ext),sizeof(int))) ) {
       fprintf(stderr,"** failed to alloc %d marks\n",nim->num_ext);
       return -1;
    }
@@ -2843,7 +2844,7 @@ int act_diff_nims( nt_opts * opts )
    if( ! nim0 ) return 1;  /* errors have been printed */
 
    nim1 = nt_image_read(opts, opts->infiles.list[1], 0, 0);
-   if( ! nim1 ){ free(nim0); return 1; }
+   if( ! nim1 ){ nifti_image_free(nim0); return 1; }
 
    if( g_debug > 1 )
       fprintf(stderr,"\n-d nifti_image diffs between '%s' and '%s'...\n",
@@ -3359,6 +3360,7 @@ int act_mod_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
 
@@ -3369,6 +3371,7 @@ int act_mod_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3377,6 +3380,8 @@ int act_mod_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3386,7 +3391,11 @@ int act_mod_hdrs( nt_opts * opts )
          nifti_image_free(nim);
       }
       else if ( swap )
-         swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
+         /* nhdr is a nifti_1_header, so swap it as one.  NIFTI_VERSION()
+            reads the magic string, and a magic of "n+2" would otherwise
+            have swap_nifti_header() treat these 348 bytes as a 540 byte
+            header.  ni_ver 0 and 1 are both 348 byte layouts. */
+         swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr) ? 1 : 0);
 
       /* if all is well, overwrite header in fname dataset */
       (void)write_hdr_to_file(nhdr, fname); /* errors printed in function */
@@ -3477,6 +3486,7 @@ int act_mod_hdr2s( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -3486,6 +3496,7 @@ int act_mod_hdr2s( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3494,6 +3505,8 @@ int act_mod_hdr2s( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3503,7 +3516,9 @@ int act_mod_hdr2s( nt_opts * opts )
          nifti_image_free(nim);
       }
       else if ( swap )
-         swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
+         /* nhdr is a nifti_2_header; use the explicit version rather than
+            the magic, which could claim "n+1" and swap 540 bytes as 348 */
+         swap_nifti_header(nhdr, 2);
 
       /* if all is well, overwrite header in fname dataset */
       (void)write_hdr2_to_file(nhdr, fname); /* errors printed in function */
@@ -3604,8 +3619,12 @@ int act_swap_hdrs( nt_opts * opts )
             swap_nifti_header(nhdr, 0);  /* undo ANALYZE */
             swap_nifti_header(nhdr, 1);  /* swap NIFTI */
          } else if ( opts->swap_old ) {
-            /* undo whichever was done and apply the old way */
-            swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
+            /* undo whichever was done and apply the old way.  As above,
+               nhdr is a nifti_1_header, so it must not be swapped as a
+               540 byte NIFTI-2 header just because its magic says "n+2".
+               old_swap_nifti_header() takes a nifti_1_header and a
+               boolean, so it needs no such guard. */
+            swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr) ? 1 : 0);
             old_swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
          }
 
@@ -3623,6 +3642,7 @@ int act_swap_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -3632,6 +3652,7 @@ int act_swap_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3640,6 +3661,8 @@ int act_swap_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3905,7 +3928,8 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               ((short *)((char *)basep + field->offset))[fc] = (short)val;
+               { const int16_t sval = (int16_t)val;
+                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(sval), &sval,sizeof(sval)); }
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3924,7 +3948,8 @@ int modify_field(void * basep, field_s * field, const char * data)
                           fc,field->len);
                   return 1;
                }
-               ((int *)((char *)basep + field->offset))[fc] = val;
+               { const int32_t ival = (int32_t)val;
+                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(ival), &ival,sizeof(ival)); }
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3944,7 +3969,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                           fc,field->len);
                   return 1;
                }
-               ((int64_t *)((char *)basep + field->offset))[fc] = v64;
+               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(v64), &v64,sizeof(v64));
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %" PRId64 "\n",
                           fc, field->name, v64);
@@ -3964,7 +3989,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               ((float *)((char *)basep + field->offset))[fc] = fval;
+               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(fval), &fval,sizeof(fval));
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %f\n",
                           fc, field->name, fval);
@@ -3985,7 +4010,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               ((double *)((char *)basep + field->offset))[fc] = f64;
+               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(f64), &f64,sizeof(f64));
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %f\n",
                           fc, field->name, f64);
@@ -3997,10 +4022,10 @@ int modify_field(void * basep, field_s * field, const char * data)
          case NT_DT_STRING:
          {
             char * dest = (char *)basep + field->offset;
-            nchars = dataLength;
-            strncpy(dest, data, field->len);
+            nchars = (int)dataLength;
+            strncpy(dest, data, (size_t)(field->len));
             if( nchars < field->len )  /* clear the rest */
-               memset(dest+nchars, '\0', field->len-nchars);
+               memset(dest+nchars, '\0', (size_t)(field->len-nchars));
          }
          break;
    }
@@ -4163,7 +4188,7 @@ static int convert_NBL_data(nifti_brick_list * NBL, int old_type, int new_type,
    nifti_datatype_sizes(new_type, &nbyper, NULL);
    NBLnew.bsize = nbvals * nbyper;
    NBLnew.nbricks = NBL->nbricks;
-   NBLnew.bricks = (void **)calloc(NBLnew.nbricks, sizeof(void *));
+   NBLnew.bricks = (void **)calloc((size_t)NBLnew.nbricks, (size_t)(sizeof(void *)));
    if( ! NBLnew.bricks ) {
       fprintf(stderr,"** cNBLd: failed to allocate %" PRId64 " void pointers\n",
               NBLnew.nbricks);
@@ -4255,7 +4280,7 @@ static int convert_raw_data(void ** retdata, void * olddata, int old_type,
 
    /* allocate new memory (calloc, in case of partial filling) */
    nifti_datatype_sizes(new_type, &nbyper, NULL);   /* get nbyper */
-   newdata = calloc(nvox, nbyper);
+   newdata = calloc((size_t)nvox, (size_t)nbyper);
    if( !newdata ) {
       fprintf(stderr,"** failed to alloc for %" PRId64 " %s elements\n",
               nvox, typestr);
@@ -6098,8 +6123,7 @@ int fill_field( field_s * fp, int type, int offset, int num, const char * name )
    fp->size   = 1;     /* init before check */
    fp->len    = num;
 
-   strncpy(fp->name, name, sizeof(fp->name));
-   fp->name[sizeof(fp->name) - 1] = 0;
+   strlcpy(fp->name, name, sizeof(fp->name));
 
    switch( type ){
       case DT_UNKNOWN:
@@ -6248,7 +6272,7 @@ int disp_field(const char *mesg, field_s *fieldp, void * str, int nfields, int h
             int    len;
 
             /* start by sucking the pointer stored here */
-            sp = *(char **)((char *)str + fp->offset);
+            memcpy(&sp, (const char *)str + fp->offset, sizeof(sp));
 
             if( ! sp ){ fprintf(stdout,"(NULL)\n");  break; }  /* anything? */
 
@@ -6262,7 +6286,9 @@ int disp_field(const char *mesg, field_s *fieldp, void * str, int nfields, int h
             else if( *sp && !isprint(*sp) )  /* if no termination, it's bad */
                fprintf(stdout,"(non-printable string)\n");
             else  /* woohoo!  a good string */
-               fprintf(stdout,"'%.40s'\n",*(char **)((char *)str + fp->offset));
+               { char * cp;
+                  memcpy(&cp, (const char *)str + fp->offset, sizeof(cp));
+                  fprintf(stdout,"'%.40s'\n", cp); }
             break;
          }
 
@@ -6271,7 +6297,7 @@ int disp_field(const char *mesg, field_s *fieldp, void * str, int nfields, int h
             nifti1_extension * extp;
 
             /* yank the address sitting there into extp */
-            extp = *(nifti1_extension **)((char *)str + fp->offset);
+            memcpy(&extp, (const char *)str + fp->offset, sizeof(extp));
 
             /* the user may use -disp_exts to display all of them */
             if( extp ) disp_nifti1_extension(NULL, extp, 6);
@@ -6332,8 +6358,8 @@ int diff_field(field_s *fieldp, void * str0, void * str1, int nfields)
          {
             nifti1_extension * ext0, * ext1;
 
-            ext0 = *(nifti1_extension **)((char *)str0 + fp->offset);
-            ext1 = *(nifti1_extension **)((char *)str1 + fp->offset);
+            memcpy(&ext0, (const char *)str0 + fp->offset, sizeof(ext0));
+            memcpy(&ext1, (const char *)str1 + fp->offset, sizeof(ext1));
 
             if( ! ext0 && ! ext1 ) break;     /* continue on */
 
@@ -7611,7 +7637,7 @@ nifti_image * nt_read_bricks(nt_opts * opts, char * fname, int len,
     /* now populate NBL (can be based only on len and nim) */
     NBL->nbricks = len;
     NBL->bsize = nim->nbyper * nim->nx * nim->ny * nim->nz;
-    NBL->bricks = (void **)calloc(NBL->nbricks, sizeof(void *));
+    NBL->bricks = (void **)calloc((size_t)(NBL->nbricks), (size_t)(sizeof(void *)));
     if( !NBL->bricks ){
         fprintf(stderr,"** NRB: failed to alloc %" PRId64 " pointers\n",
                 NBL->nbricks);
@@ -7626,7 +7652,7 @@ nifti_image * nt_read_bricks(nt_opts * opts, char * fname, int len,
 
     /* now allocate the data pointers */
     for( c = 0; c < len; c++ ) {
-        NBL->bricks[c] = calloc(1, NBL->bsize);
+        NBL->bricks[c] = calloc(1, (size_t)(NBL->bsize));
         if( !NBL->bricks[c] ){
             fprintf(stderr,
                     "** NRB: failed to alloc brick %d of %" PRId64 " bytes\n",

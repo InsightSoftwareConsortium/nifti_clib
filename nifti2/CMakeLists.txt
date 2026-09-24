@@ -184,10 +184,63 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
       if(TEST_INSTALL)
         add_test(
           NAME install_linking
-          COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/install_linking_test.sh ${CMAKE_MAKE_PROGRAM}
+          COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/install_linking_test.sh ${CMAKE_MAKE_PROGRAM} ${CMAKE_SOURCE_DIR}
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR} )
       endif()
   endif()
+
+  # A dim[0] outside 1..7 must be refused rather than used to index dim[].
+  add_test( NAME ${TEST_PREFIX}_tool_disp_nim_bad_dim0 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n2_bad_dim0.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_disp_nim_bad_dim0 PROPERTIES PASS_REGULAR_EXPRESSION "bad dim\\[0\\]" )
+
+  # A nifti_1_header is swapped at NIFTI-1 width whatever its magic claims.
+  add_test( NAME ${TEST_PREFIX}_tool_check_hdr_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -check_hdr -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_magic_n2.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_check_hdr_magic_n2 PROPERTIES PASS_REGULAR_EXPRESSION "header IS GOOD" )
+
+  # The tool's own header copies are swapped at their own width too. Both
+  # invocations rewrite the file, so each works on a copy.
+  add_test( NAME ${TEST_PREFIX}_tool_mod_hdr_magic_n2_setup COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_magic_n2.nii ${CMAKE_CURRENT_BINARY_DIR}/mod_magic_n2.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_mod_hdr_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -mod_hdr -mod_field descrip hello -overwrite -infiles ${CMAKE_CURRENT_BINARY_DIR}/mod_magic_n2.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_mod_hdr_magic_n2 PROPERTIES DEPENDS ${TEST_PREFIX}_tool_mod_hdr_magic_n2_setup )
+  add_test( NAME ${TEST_PREFIX}_tool_swap_as_old_magic_n2_setup COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_magic_n2.nii ${CMAKE_CURRENT_BINARY_DIR}/swap_magic_n2.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_swap_as_old_magic_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -swap_as_old -overwrite -infiles ${CMAKE_CURRENT_BINARY_DIR}/swap_magic_n2.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_swap_as_old_magic_n2 PROPERTIES DEPENDS ${TEST_PREFIX}_tool_swap_as_old_magic_n2_setup )
+
+  # Dimensions whose product overflows the voxel count are refused.
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_overflow.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n2_overflow.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_volsize_overflow COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_volsize.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 ${TEST_PREFIX}_tool_reject_nvox_overflow_n2
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] overflows the voxel count" )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
+
+  # A repeated ASCII attribute releases the previous value, and the last
+  # one wins; the regex pins the surviving behavior.
+  add_test( NAME ${TEST_PREFIX}_tool_ascii_dup_attr COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/dup_attr.nia )
+  set_tests_properties( ${TEST_PREFIX}_tool_ascii_dup_attr PROPERTIES PASS_REGULAR_EXPRESSION "dup2.nia" )
+
+  # Only compiled when the FSL name-conflict path is built.
+  if(FSLSTYLE_NAME_CONFLICTS)
+    add_test( NAME ${TEST_PREFIX}_ambiguous_hdrname
+              COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:${TOOL_NAME}>
+                      -DDIR=${CMAKE_CURRENT_BINARY_DIR}/ambig
+                      -P ${CMAKE_CURRENT_LIST_DIR}/ambiguous_hdrname.cmake )
+  endif()
+
+  if(UNIX AND NIFTI_SHELL_SCRIPT_TESTS)
+    # Reaches the failure paths that have to release the header before returning.
+    add_test( NAME ${TEST_PREFIX}_mod_hdr_errpaths COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/mod_header_errpaths.sh $<TARGET_FILE:${TOOL_NAME}> $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti1_tool> )
+  endif()
+
+  if(UNIX AND NIFTI_SHELL_SCRIPT_TESTS)
+    # Needs no external data, so it carries no NEEDS_DATA label.
+    add_test( NAME ${TEST_PREFIX}_nii_cmp_selftest COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/nii_cmp_selftest.sh ${NIFTI_TEST_SCRIPT_DIR} )
+  endif()
+
+  # Reading an ASCII header through the NIFTI-2 reader releases the image
+  # it built; the leak is what the memcheck and sanitizer legs observe.
+  add_test( NAME ${TEST_PREFIX}_tool_disp_hdr2_ascii COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_hdr2 -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/dup_attr.nia )
 
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)

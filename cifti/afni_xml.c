@@ -196,7 +196,7 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
    {
       if( reset_xml_buf(xd, &buf, &bsize) ) break;
 
-      blen = fread(buf, 1, bsize, fp);
+      blen = fread(buf, 1, (size_t)bsize, fp);
 
       /* check for early termination */
       bshort = loc_strnlen(buf, blen);
@@ -204,14 +204,14 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
          if( xd->verb > 1 )
             fprintf(stderr,"-- AXML: truncating fbuffer from %u to %" PRId64  "\n",
                     blen, bshort);
-         blen = (int)bshort;
+         blen = (unsigned)bshort;
       }
 
       done = blen < (unsigned)  bsize;
 
       if(xd->verb > 4) fprintf(stderr,"-- XML_Parse # %d\n", pcount);
       pcount++;
-      if( XML_Parse(parser, buf, blen, done) == XML_STATUS_ERROR) {
+      if( XML_Parse(parser, buf, (int)blen, done) == XML_STATUS_ERROR) {
           fprintf(stderr,"** %s at line %u\n",
                   XML_ErrorString(XML_GetErrorCode(parser)),
                   (unsigned int)XML_GetCurrentLineNumber(parser));
@@ -284,7 +284,7 @@ afni_xml_list axml_read_buf(const char * buf_in, int64_t bin_len)
         /*--- replace fread with buffer copy ---*/
 
         /* decide how much to copy and copy */
-        if( bin_remain >= bsize ) blen = bsize;
+        if( bin_remain >= bsize ) blen = (unsigned)bsize;
         else                      blen = bin_remain;
 
         if(blen > 0 && blen <= (unsigned)bsize) {
@@ -299,7 +299,7 @@ afni_xml_list axml_read_buf(const char * buf_in, int64_t bin_len)
 
         if(xd->verb > 4) fprintf(stderr,"-- XML_Parse # %d\n", pcount);
         pcount++;
-        if( XML_Parse(parser, buf, blen, done) == XML_STATUS_ERROR) {
+        if( XML_Parse(parser, buf, (int)blen, done) == XML_STATUS_ERROR) {
             fprintf(stderr,"** %s at line %u\n",
                     XML_ErrorString(XML_GetErrorCode(parser)),
                     (unsigned int)XML_GetCurrentLineNumber(parser));
@@ -412,7 +412,14 @@ afni_xml_t * new_afni_xml(const char * name)
    newp->xparent = NULL;
    newp->xchild  = NULL;
 
-   if( name ) newp->name = strdup(name);
+   if( name ) {
+      newp->name = strdup(name);
+      if( ! newp->name ) {
+         fprintf(stderr,"** new_afni_xml: failed to copy name '%s'\n", name);
+         free(newp);
+         return NULL;
+      }
+   }
 
    return newp;
 }
@@ -440,8 +447,8 @@ int axml_add_attrs(afni_xml_t * ax, const char ** attr)
       return 0;
    }
 
-   ax->attrs.name = (char **)malloc(natr*sizeof(char *));
-   ax->attrs.value = (char **)malloc(natr*sizeof(char *));
+   ax->attrs.name = (char **)malloc((size_t)natr * sizeof(char *));
+   ax->attrs.value = (char **)malloc((size_t)natr * sizeof(char *));
 
    /* failure? */
    if( ! ax->attrs.name || ! ax->attrs.value ) {
@@ -457,6 +464,11 @@ int axml_add_attrs(afni_xml_t * ax, const char ** attr)
    for(c = 0, aind = 0; attr[c]; c += 2, aind++) {
       ax->attrs.name[aind]  = strdup(strip_whitespace(attr[c],0));
       ax->attrs.value[aind] = strdup(strip_whitespace(attr[c+1],0));
+      if( ! ax->attrs.name[aind] || ! ax->attrs.value[aind] ) {
+         fprintf(stderr,"** NAX: failed to copy attribute %d\n", aind);
+         ax->attrs.length = aind+1; /* so the partial pair is still freed */
+         return 1;
+      }
    }
 
    return 0;
@@ -654,7 +666,7 @@ static int reset_xml_buf(afni_xml_control * xd, char ** buf, int * bsize)
         fprintf(stderr,"++ update buf, %d to %d bytes\n",*bsize,xd->buf_size);
 
     *bsize = xd->buf_size;
-    *buf = (char *)safe_realloc(*buf, (*bsize+1) * sizeof(char));
+    *buf = (char *)safe_realloc(*buf, (size_t)(*bsize+1) * sizeof(char));
     if( ! *buf ) {
         fprintf(stderr,"** failed to alloc %d bytes of xml buf!\n", *bsize);
         *bsize = 0;
@@ -722,8 +734,9 @@ static int epush(afni_xml_control * xd, const char * ename, const char ** attr)
        if( xd->verb > 3 ) show_attrs(xd, attr, 1);
    }
 
-   /* determine whether we should go into a skip block */
-   if( errs ) xd->dskip = xd->depth;
+   /* determine whether we should go into a skip block; keep the outermost
+      such depth, since that is the one whose pop ends the skip */
+   if( errs && ! xd->dskip ) xd->dskip = xd->depth;
 
    /* if we are in a skip block, do nothing but monitor stack */
    if( xd->dskip ) {
@@ -755,16 +768,16 @@ static int epop(afni_xml_control * xd, const char * ename)
    if( xd->wkeep ) xd->wkeep = 0; /* clear storage continuation */
 
    if( xd->dskip ) {
-      if( xd->dskip == xd->depth ) xd->dskip = 0;  /* clear */
-
       if( xd->verb > 3 )
           fprintf(stderr,"-- skip=%d, depth=%d, skipping pop element '%s'\n",
                   xd->dskip, xd->depth, ename);
+
+      /* clear only after the element has been skipped, so that the stack
+         is not touched at a depth that was never pushed onto it */
+      if( xd->dskip == xd->depth ) xd->dskip = 0;
    } else {
       process_popped_element(xd, ename);
-   }
 
-   if( ! xd->dskip ) {
       xd->stack[xd->depth-1] = NULL;  /* should be irrelevant */
 
       if( xd->verb > 4 ) {
@@ -781,7 +794,21 @@ static int epop(afni_xml_control * xd, const char * ename)
 static int process_popped_element(afni_xml_control * xd, const char * ename)
 {
    afni_xml_t * ax;
+
+   /* a stack slot is filled by the matching epush().  An element that was
+      skipped never fills one, so do not assume this slot holds a struct
+      with a name. */
+   if( xd->depth <= 0 || xd->depth > AXML_MAX_DEPTH ) {
+      if( gAXD.verb ) fprintf(stderr,"** pop at depth %d!\n", xd->depth);
+      return 1;
+   }
+
    ax = xd->stack[xd->depth-1];
+   if( ! ax || ! ax->name ) {
+      if( gAXD.verb ) fprintf(stderr,"** pop of unfilled element '%s'!\n",
+                              ename ? ename : "NULL");
+      return 1;
+   }
 
    if( strcmp(ename, ax->name) ) {
       if( gAXD.verb ) fprintf(stderr,"** pop mismatch!\n");
@@ -799,7 +826,7 @@ static int add_to_xroot_list(afni_xml_control * xd, afni_xml_t * newp)
 
    xd->xroot->len++;
    xd->xroot->xlist = (afni_xml_t **)safe_realloc(xd->xroot->xlist,
-                                     xd->xroot->len * sizeof(afni_xml_t *));
+                                     (size_t)xd->xroot->len * sizeof(afni_xml_t *));
    if( ! xd->xroot->xlist ) {
       fprintf(stderr,"** failed to alloc %d AXMLT pointers\n", xd->xroot->len);
       return 1;
@@ -817,7 +844,7 @@ static int add_to_xchild_list(afni_xml_t * parent, afni_xml_t * child)
 
    parent->nchild++;
    parent->xchild = (afni_xml_t **)safe_realloc(parent->xchild,
-                                   parent->nchild * sizeof(afni_xml_t *));
+                                   (size_t)parent->nchild * sizeof(afni_xml_t *));
    if( ! parent->xchild ) {
       fprintf(stderr,"** failed to alloc %d AXML pointers\n", parent->nchild);
       return 1;
@@ -838,7 +865,11 @@ static afni_xml_t * make_afni_xml(const char * ename, const char ** attr)
    newp = new_afni_xml(ename);
    if( ! newp ) return NULL;
 
-   axml_add_attrs(newp, attr);
+   /* a failure here is an allocation failure; epush() skips on NULL */
+   if( axml_add_attrs(newp, attr) ) {
+      axml_free_xml_t(newp);
+      return NULL;
+   }
 
    return newp;
 }
@@ -875,7 +906,7 @@ static char * strip_whitespace(const char * str, int slen)
 
    /* make sure we have local space */
    if( len > blen ) { /* allocate a bigger buffer */
-      buf = (char *)safe_realloc(buf, (len+1) * sizeof(char));
+      buf = (char *)safe_realloc(buf, (size_t)(len+1) * sizeof(char));
       if( !buf ) {
          fprintf(stderr,"** failed to alloc wspace buf of len %d\n", len+1);
          return (char *)str;
@@ -888,7 +919,7 @@ static char * strip_whitespace(const char * str, int slen)
 
    if( ifirst == len ) *buf = '\0';
    else {
-      strncpy(buf, str+ifirst, len-ifirst-ilast);
+      strncpy(buf, str+ifirst, (size_t)(len-ifirst-ilast));
       buf[len-ifirst-ilast] = '\0';
    }
 
@@ -940,14 +971,14 @@ static int append_to_string(char ** ostr, int * olen,
 
    newlen = *olen + ilen;
 
-   *ostr = (char *)safe_realloc(*ostr, newlen * sizeof(char));
+   *ostr = (char *)safe_realloc(*ostr, (size_t)newlen * sizeof(char));
    if( !*ostr ) {
       fprintf(stderr,"** AX.A2S: failed to alloc %d chars\n", newlen);
       return 1;
    }
 
    /* copy, starting at old nul char (if any), and terminate */
-   strncpy((*ostr)+*olen-1, istr, ilen);
+   strncpy((*ostr)+*olen-1, istr, (size_t)ilen);
    (*ostr)[newlen-1] = '\0';
    *olen = newlen;
 
@@ -1021,7 +1052,8 @@ static int64_t loc_strnlen(const char * str, int64_t maxlen)
    const char * sptr;
    int64_t      len;
 
-   for( sptr=str, len=0; *sptr && len<maxlen; sptr++, len++)
+   /* test the length first: str need not be terminated within maxlen */
+   for( sptr=str, len=0; len<maxlen && *sptr; sptr++, len++)
       ;
 
    return len;  /* max of maxlen */

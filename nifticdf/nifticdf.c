@@ -1892,7 +1892,7 @@ static double T5,T6,T7,T8,T9,T10,T12,T13;
 /*
      Check arguments
 */
-    if(!(*which < 1 && *which > 4)) goto S30;
+    if(!(*which < 1 || *which > 4)) goto S30;
     if(!(*which < 1)) goto S10;
     *bound = 1.0e0;
     goto S20;
@@ -11044,17 +11044,21 @@ char const * const inam[]={ NULL , NULL ,
 
 int nifti_intent_code( const char *name )
 {
-   char *unam , *upt ;
+   if( name == NULL || *name == '\0' )
+      return -1 ;
+
+   size_t size = strlen(name)+1;
+   char *unam = (char *)malloc(size);
+   if (!unam)
+      return -1 ;
+   strlcpy(unam,name,size);
+   for( char *upt=unam ; *upt != '\0' ; upt++ )
+      *upt = (char)toupper(*upt) ;
+
    int ii ;
-
-   if( name == NULL || *name == '\0' ) return -1 ;
-
-   unam = (char *)malloc(strlen(name)+1);
-   strcpy(unam,name);
-   for( upt=unam ; *upt != '\0' ; upt++ ) *upt = (char)toupper(*upt) ;
-
    for( ii=NIFTI_FIRST_STATCODE ; ii <= NIFTI_LAST_STATCODE ; ii++ )
-     if( strcmp(inam[ii],unam) == 0 ) break ;
+     if( strcmp(inam[ii],unam) == 0 )
+        break ;
 
    free(unam) ;
    return (ii <= NIFTI_LAST_STATCODE) ? ii : -1 ;

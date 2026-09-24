@@ -28,6 +28,18 @@
 #include "fslio.h"
 #include "assert.h"
 
+/* Internal to this file.  Nothing in the tree calls them across a
+   translation unit, no header declares them, and no public source
+   outside a vendored copy of this file references them.  A downstream
+   project that needs one declares it in fslio.h with FSL_API.        */
+static int  FslIsValidFileType(int filetype);
+static int  FslGetFileType2(const FSLIO *fslio, int quiet);
+static int  FslFileType(const char *fname);
+static int  FslGetReadFileType(const FSLIO *fslio);
+static void FslInit4Write(FSLIO* fslio, const char* filename, int ft);
+static int  fsl_fileexists(const char* fname);
+static int  check_for_multiple_filenames(const char* filename);
+
 static int FslIgnoreMFQ=0;
 static int FslOverrideOutputType=-1;
 
@@ -56,7 +68,7 @@ const char* FslFileTypeString(int filetype)
 }
 
 
-int FslIsValidFileType(int filetype)
+static int FslIsValidFileType(int filetype)
 {
   if ( (filetype!=FSL_TYPE_ANALYZE)    && (filetype!=FSL_TYPE_ANALYZE_GZ) &&
        (filetype!=FSL_TYPE_NIFTI)      && (filetype!=FSL_TYPE_NIFTI_GZ) &&
@@ -85,9 +97,8 @@ int FslBaseFileType(int filetype)
 }
 
 
-int FslGetFileType2(const FSLIO *fslio, int quiet)
+static int FslGetFileType2(const FSLIO *fslio, int quiet)
 {
-  FSLIO *mutablefslio;
   if (fslio==NULL)  FSLIOERR("FslGetFileType: Null pointer passed for FSLIO");
   if ( (fslio->file_mode==FSL_TYPE_MINC) || (fslio->file_mode==FSL_TYPE_MINC_GZ) ) {
     return fslio->file_mode;
@@ -100,8 +111,7 @@ int FslGetFileType2(const FSLIO *fslio, int quiet)
         fprintf(stderr,"Warning: nifti structure and fsl structure disagree on file type\n");
         fprintf(stderr,"nifti = %d and fslio = %d\n",fslio->niftiptr->nifti_type,fslio->file_mode);
       }
-      mutablefslio = (FSLIO *) fslio;  /* dodgy and will generate warnings */
-      mutablefslio->niftiptr->nifti_type = FslBaseFileType(fslio->file_mode);
+      fslio->niftiptr->nifti_type = FslBaseFileType(fslio->file_mode);
       return fslio->file_mode;
     }
  }
@@ -190,7 +200,7 @@ int FslGetEnvOutputType(void)
 }
 
 
-int FslFileType(const char* fname)
+static int FslFileType(const char* fname)
 {
   /* return type is FSL_TYPE_* or -1 to indicate undetermined */
   /* use name as first priority but if that is ambiguous then resolve using environment */
@@ -224,7 +234,7 @@ int FslFileType(const char* fname)
 /************************************************************
  * FslGetReadFileType
  ************************************************************/
-/*! \fn int FslGetReadFileType(const FSLIO *fslio)
+/*! \fn static int FslGetReadFileType(const FSLIO *fslio)
     \brief  return the best estimate of the true file type
 
   This function is used to return the best estimate of the true file type once
@@ -389,7 +399,7 @@ void FslSetInit(FSLIO* fslio)
 
 
 
-void FslInit4Write(FSLIO* fslio, const char* filename, int ft)
+static void FslInit4Write(FSLIO* fslio, const char* filename, int ft)
 {
   /* ft determines filetype if ft>=0*/
   int imgtype;
@@ -502,7 +512,7 @@ void FslCloneHeader(FSLIO *dest, const FSLIO *src)
 }
 
 
-int  fsl_fileexists(const char* fname)
+static int  fsl_fileexists(const char* fname)
 {
    znzFile fp;
    fp = znzopen( fname , "rb" , 1 ) ;
@@ -559,7 +569,7 @@ int FslCheckForMultipleFileNames(const char* filename)
 
 
 
-int check_for_multiple_filenames(const char* filename)
+static int check_for_multiple_filenames(const char* filename)
 {
   char *basename, *tmpname;
   char *otype;
@@ -809,7 +819,6 @@ void* FslReadAllVolumes(FSLIO* fslio, char* filename)
   /* check for failure, from David Akers */
   if (fslio->niftiptr == NULL) {
         FSLIOERR("FslReadAllVolumes: error reading NIfTI image");
-        return(NULL);
   }
 
   FslSetFileType(fslio,fslio->niftiptr->nifti_type);
@@ -873,7 +882,7 @@ void FslWriteAllVolumes(FSLIO *fslio, const void *buffer)
 
   FslGetDim(fslio,&x,&y,&z,&t);
   FslWriteHeader(fslio);
-  FslWriteVolumes(fslio,buffer,t);
+  FslWriteVolumes(fslio,buffer, (size_t)t);
   return;
 }
 
@@ -915,13 +924,14 @@ size_t FslWriteVolumes(FSLIO *fslio, const void *buffer, size_t nvols)
          && (FslGetLeftRightOrder(fslio)==FSL_NEUROLOGICAL) ) {
       /* If it is Analyze and Neurological order then SWAP DATA into Radiological order */
       /* This is nasty - but what else can be done?!? */
-      char *tmpbuf, *inbuf;
+      char *tmpbuf;
+      const char *inbuf;
       long int x, b, n, nrows;
       short nx, ny, nz, nv;
-      inbuf = (char *) buffer;
+      inbuf = buffer;
       tmpbuf = (char *)calloc(nbytes,1);
       FslGetDim(fslio,&nx,&ny,&nz,&nv);
-      nrows = nbytes / (nx * bpv);
+      nrows = (long int)(nbytes / ((size_t)nx * (size_t)bpv));
       for (n=0; n<nrows; n++) {
         for (x=0; x<nx; x++) {
           for (b=0; b<bpv; b++) {
@@ -1008,24 +1018,24 @@ size_t FslReadSliceSeries(FSLIO *fslio, void *buffer, short slice, size_t nvols)
 
     if ((slice<0) || (slice>=z)) FSLIOERR("FslReadSliceSeries: slice outside valid range");
 
-    slbytes = x * y * (FslGetDataType(fslio, &type) / 8);
+    slbytes = (size_t)x * (size_t)y * (FslGetDataType(fslio, &type) / 8);
     volbytes = slbytes * z;
 
-    orig_offset = znztell(fslio->fileptr);
-    znzseek(fslio->fileptr, slbytes*slice, SEEK_CUR);
+    orig_offset = (size_t)znztell(fslio->fileptr);
+    znzseek(fslio->fileptr, (znz_off_t)(slbytes*(size_t)slice), SEEK_CUR);
 
     for (n=0; n<nvols; n++) {
-      if (n>0) znzseek(fslio->fileptr, volbytes - slbytes, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - slbytes), SEEK_CUR);
       if (znzread((char *)buffer+n*slbytes, 1, slbytes, fslio->fileptr) != slbytes)
         FSLIOERR("FslReadSliceSeries: failed to read values");
      if (fslio->niftiptr->byteorder != nifti_short_order())
-        nifti_swap_Nbytes(slbytes / fslio->niftiptr->swapsize,
+        nifti_swap_Nbytes(slbytes / (size_t)fslio->niftiptr->swapsize,
                           fslio->niftiptr->swapsize, (char *)buffer+n*slbytes);
      }
 
 
     /* restore file pointer to original position */
-    znzseek(fslio->fileptr,orig_offset,SEEK_SET);
+    znzseek(fslio->fileptr,(znz_off_t)orig_offset,SEEK_SET);
     return n;
   }
   if (fslio->mincptr!=NULL) {
@@ -1070,20 +1080,20 @@ size_t FslReadRowSeries(FSLIO *fslio, void *buffer, short row, short slice, size
     slbytes = rowbytes * y;
     volbytes = slbytes * z;
 
-    orig_offset = znztell(fslio->fileptr);
-    znzseek(fslio->fileptr, rowbytes*row + slbytes*slice, SEEK_CUR);
+    orig_offset = (size_t)znztell(fslio->fileptr);
+    znzseek(fslio->fileptr, (znz_off_t)(rowbytes*(size_t)row + slbytes*(size_t)slice), SEEK_CUR);
 
     for (n=0; n<nvols; n++){
-      if (n>0) znzseek(fslio->fileptr, volbytes - rowbytes, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - rowbytes), SEEK_CUR);
       if (znzread((char *)buffer+n*rowbytes, 1, rowbytes, fslio->fileptr) != rowbytes)
         FSLIOERR("FslReadRowSeries: failed to read values");
       if (fslio->niftiptr->byteorder != nifti_short_order())
-        nifti_swap_Nbytes(rowbytes / fslio->niftiptr->swapsize,
+        nifti_swap_Nbytes(rowbytes / (size_t)fslio->niftiptr->swapsize,
                           fslio->niftiptr->swapsize, (char *)buffer+n*rowbytes);
     }
 
     /* restore file pointer to original position */
-    znzseek(fslio->fileptr,orig_offset,SEEK_SET);
+    znzseek(fslio->fileptr,(znz_off_t)orig_offset,SEEK_SET);
     return n;
   }
   if (fslio->mincptr!=NULL) {
@@ -1129,14 +1139,14 @@ size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, sho
     if ((zVox<0) || (zVox >=zdim)) FSLIOERR("FslReadTimeSeries: voxel outside valid range");
 
     wordsize = fslio->niftiptr->nbyper;
-    volbytes = xdim * ydim * zdim * wordsize;
+    volbytes = (size_t)xdim * (size_t)ydim * (size_t)zdim * wordsize;
 
-    orig_offset = znztell(fslio->fileptr);
+    orig_offset = (size_t)znztell(fslio->fileptr);
     offset = ((ydim * zVox + yVox) * xdim + xVox) * wordsize;
-    znzseek(fslio->fileptr,offset,SEEK_CUR);
+    znzseek(fslio->fileptr,(znz_off_t)offset,SEEK_CUR);
 
     for (n=0; n<nvols; n++) {
-      if (n>0) znzseek(fslio->fileptr, volbytes - wordsize, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - wordsize), SEEK_CUR);
       if (znzread((char *)buffer+(n*wordsize), 1, wordsize,fslio->fileptr) != wordsize)
         FSLIOERR("FslReadTimeSeries: failed to read values");
       if (fslio->niftiptr->byteorder != nifti_short_order())
@@ -1145,7 +1155,7 @@ size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, sho
     }
 
     /* restore file pointer to original position */
-    znzseek(fslio->fileptr,orig_offset,SEEK_SET);
+    znzseek(fslio->fileptr,(znz_off_t)orig_offset,SEEK_SET);
     return n;
 
   }
@@ -1215,8 +1225,11 @@ void FslSetDim(FSLIO *fslio, short x, short y, short z, short v)
     fslio->niftiptr->dim[6] = fslio->niftiptr->nv;
     fslio->niftiptr->dim[7] = fslio->niftiptr->nw;
 
-    fslio->niftiptr->nvox =  fslio->niftiptr->nx * fslio->niftiptr->ny * fslio->niftiptr->nz
-      * fslio->niftiptr->nt * fslio->niftiptr->nu * fslio->niftiptr->nv * fslio->niftiptr->nw ;
+    fslio->niftiptr->nvox =
+        (size_t)fslio->niftiptr->nx * (size_t)fslio->niftiptr->ny
+      * (size_t)fslio->niftiptr->nz * (size_t)fslio->niftiptr->nt
+      * (size_t)fslio->niftiptr->nu * (size_t)fslio->niftiptr->nv
+      * (size_t)fslio->niftiptr->nw ;
 
   }
   if (fslio->mincptr!=NULL) {
@@ -1257,7 +1270,7 @@ void FslGetDimensionality(FSLIO *fslio, size_t *dim)
 {
   if (fslio==NULL)  FSLIOERR("FslGetDimensionality: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
-    *dim = fslio->niftiptr->ndim;
+    *dim = (size_t)fslio->niftiptr->ndim;
   }
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
@@ -1342,8 +1355,9 @@ void FslGetAuxFile(FSLIO *fslio,char *aux_file)
 {
   if (fslio==NULL)  FSLIOERR("FslGetAuxFile: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
-    strncpy(aux_file,fslio->niftiptr->aux_file, 24);
-    aux_file[24-1] = '\0';
+    /* aux_file must have room for sizeof(nifti_1_header::aux_file) bytes. */
+    strncpy(aux_file,fslio->niftiptr->aux_file,sizeof(fslio->niftiptr->aux_file)-1);
+    aux_file[sizeof(fslio->niftiptr->aux_file)-1] = '\0';
   }
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
@@ -1355,8 +1369,8 @@ void FslSetAuxFile(FSLIO *fslio,const char *aux_file)
 {
   if (fslio==NULL)  FSLIOERR("FslSetAuxFile: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
-    strncpy(fslio->niftiptr->aux_file, aux_file, 24);
-    fslio->niftiptr->aux_file[24-1] = '\0';
+    strncpy(fslio->niftiptr->aux_file,aux_file,sizeof(fslio->niftiptr->aux_file)-1);
+    fslio->niftiptr->aux_file[sizeof(fslio->niftiptr->aux_file)-1] = '\0';
   }
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
@@ -1364,7 +1378,9 @@ void FslSetAuxFile(FSLIO *fslio,const char *aux_file)
 }
 
 
-void FslSetVoxUnits(FSLIO *fslio, const char *units)
+#if 0
+/* No caller in this file, no header declares them, and no public source uses them. */
+static void FslSetVoxUnits(FSLIO *fslio, const char *units)
 {
   int unitcode=0;
   if (fslio==NULL)  FSLIOERR("FslSetVoxUnits: Null pointer passed for FSLIO");
@@ -1384,7 +1400,7 @@ void FslSetVoxUnits(FSLIO *fslio, const char *units)
 }
 
 
-void FslGetVoxUnits(FSLIO *fslio, char *units)
+static void FslGetVoxUnits(FSLIO *fslio, char *units)
 {
   if (fslio==NULL)  FSLIOERR("FslGetVoxUnits: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
@@ -1394,6 +1410,7 @@ void FslGetVoxUnits(FSLIO *fslio, char *units)
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
   }
 }
+#endif
 
 void FslSetTimeUnits(FSLIO *fslio, const char *units)
 {
@@ -1461,7 +1478,7 @@ size_t FslGetDataType(FSLIO *fslio, short *t)
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
   }
-  return (size_t) 8 * nbytepix;
+  return (size_t) 8 * (size_t)nbytepix;
 }
 
 
@@ -2092,7 +2109,6 @@ FSLIO * FslReadHeader(char *fname)
 
   if (fslio->niftiptr == NULL) {
         FSLIOERR("FslReadHeader: error reading header information");
-        return(NULL);
   }
 
   fslio->file_mode = FslGetReadFileType(fslio);
@@ -2352,16 +2368,16 @@ double ***d3matrix(int zh,  int yh, int xh)
 
 
         /** allocate pointers to slices */
-        t=(double ***) malloc((size_t)((nslice)*sizeof(double**)));
+        t=(double ***) malloc(nslice*sizeof(double**));
         if (!t) FSLIOERR("d3matrix: allocation failure");
 
         /** allocate pointers for ydim */
-        t[0]=(double **) malloc((size_t)((nslice*nrow)*sizeof(double*)));
+        t[0]=(double **) malloc(nslice*nrow*sizeof(double*));
         if (!t[0]) FSLIOERR("d3matrix: allocation failure");
 
 
         /** allocate the data blob */
-        t[0][0]=(double *) malloc((size_t)((nslice*nrow*ncol)*sizeof(double)));
+        t[0][0]=(double *) malloc(nslice*nrow*ncol*sizeof(double));
         if (!t[0][0]) FSLIOERR("d3matrix: allocation failure");
 
 
@@ -2402,20 +2418,20 @@ double ****d4matrix(int th, int zh,  int yh, int xh)
 
 
         /** allocate pointers to vols */
-        t=(double ****) malloc((size_t)((nvol)*sizeof(double***)));
+        t=(double ****) malloc((size_t)nvol*sizeof(double***));
         if (!t) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers to slices */
-        t[0]=(double ***) malloc((size_t)((nvol*nslice)*sizeof(double**)));
+        t[0]=(double ***) malloc((size_t)nvol*(size_t)nslice*sizeof(double**));
         if (!t[0]) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers for ydim */
-        t[0][0]=(double **) malloc((size_t)((nvol*nslice*nrow)*sizeof(double*)));
+        t[0][0]=(double **) malloc((size_t)nvol*(size_t)nslice*(size_t)nrow*sizeof(double*));
         if (!t[0][0]) FSLIOERR("d4matrix: allocation failure");
 
 
         /** allocate the data blob */
-        t[0][0][0]=(double *) malloc((size_t)((nvol*nslice*nrow*ncol)*sizeof(double)));
+        t[0][0][0]=(double *) malloc((size_t)nvol*(size_t)nslice*(size_t)nrow*(size_t)ncol*sizeof(double));
         if (!t[0][0][0]) FSLIOERR("d4matrix: allocation failure");
 
 
