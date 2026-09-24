@@ -306,8 +306,8 @@ NI2_API int fill_hdr2_field_array(field_s * nh_fields);
 NI2_API int fill_nim1_field_array(field_s * nim_fields);
 NI2_API int fill_nim2_field_array(field_s * nim_fields);
 NI2_API int fill_ana_field_array(field_s * ah_fields);
-NI2_API int modify_all_fields(void *basep, nt_opts *opts, field_s *fields, int flen);
-NI2_API int modify_field     (void * basep, field_s * field, const char * data);
+NI2_API int modify_all_fields(void *basep, size_t baseplen, nt_opts *opts, field_s *fields, int flen);
+NI2_API int modify_field     (void * basep, size_t baseplen, field_s * field, const char * data);
 NI2_API int process_opts     (int argc, const char * argv[], nt_opts * opts);
 NI2_API int remove_ext_list  (nifti_image * nim, const char ** elist, int len);
 NI2_API int usage            (const char * prog, int level);
@@ -320,7 +320,7 @@ NI2_API int write_hdr2_to_file(nifti_2_header * nhdr, const char * fname);
 /* wrappers for nifti reading functions (allow MAKE_IM) */
 NI2_API nifti_image    * nt_image_read (nt_opts * opts, const char * fname,
                                         int read_data, int make_ver);
-NI2_API nifti_image    * nt_read_bricks(nt_opts * opts, char * fname, int len,
+NI2_API nifti_image    * nt_read_bricks(nt_opts * opts, char * fname, int64_t len,
                                         int64_t * list, nifti_brick_list * NBL);
 NI2_API void * nt_read_header(const char * fname, int * nver, int * swapped, int check,
                               int new_datatype, int64_t new_dim[8]);

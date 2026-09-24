@@ -3344,7 +3344,7 @@ int act_mod_hdrs( nt_opts * opts )
       }
 
       /* okay, let's actually trash the data fields */
-      if( modify_all_fields(nhdr, opts, g_hdr1_fields, NT_HDR1_NUM_FIELDS) )
+      if( modify_all_fields(nhdr, sizeof(*nhdr), opts, g_hdr1_fields, NT_HDR1_NUM_FIELDS) )
       {
          free(nhdr);
          return 1;
@@ -3470,7 +3470,7 @@ int act_mod_hdr2s( nt_opts * opts )
       }
 
       /* okay, let's actually trash the data fields */
-      if( modify_all_fields(nhdr, opts, g_hdr2_fields, NT_HDR2_NUM_FIELDS) )
+      if( modify_all_fields(nhdr, sizeof(*nhdr), opts, g_hdr2_fields, NT_HDR2_NUM_FIELDS) )
       {
          free(nhdr);
          return 1;
@@ -3707,7 +3707,7 @@ int act_mod_nims( nt_opts * opts )
                  opts->flist.len, opts->infiles.list[filec]);
 
       /* okay, let's actually trash the data fields */
-      if( modify_all_fields(nim, opts, g_nim2_fields, NT_NIM_NUM_FIELDS) )
+      if( modify_all_fields(nim, sizeof(*nim), opts, g_nim2_fields, NT_NIM_NUM_FIELDS) )
       {
          nifti_image_free(nim);
          return 1;
@@ -3810,7 +3810,7 @@ int write_hdr2_to_file( nifti_2_header * nhdr, const char * fname )
 /*----------------------------------------------------------------------
  * modify all fields in the list
  *----------------------------------------------------------------------*/
-int modify_all_fields( void * basep, nt_opts * opts, field_s * fields, int flen)
+int modify_all_fields( void * basep, size_t baselen, nt_opts * opts, field_s * fields, int flen)
 {
    field_s * fp;
    int       fc, lc;  /* field and list counters */
@@ -3840,7 +3840,7 @@ int modify_all_fields( void * basep, nt_opts * opts, field_s * fields, int flen)
          return 1;
       }
 
-      if( modify_field( basep, fp, opts->vlist.list[lc]) )
+      if( modify_field( basep, baselen, fp, opts->vlist.list[lc]) )
          return 1;
    }
 
@@ -3853,7 +3853,7 @@ int modify_all_fields( void * basep, nt_opts * opts, field_s * fields, int flen)
  *
  * pointer fields are not allowed here
  *----------------------------------------------------------------------*/
-int modify_field(void * basep, field_s * field, const char * data)
+int modify_field(void * basep, size_t baselen, field_s * field, const char * data)
 {
    float         fval;
    const char  * posn = data;
@@ -3867,6 +3867,16 @@ int modify_field(void * basep, field_s * field, const char * data)
    if( dataLength == 0 )
    {
       fprintf(stderr,"** no data for '%s' field modification\n",field->name);
+      return 1;
+   }
+
+   /* every case below writes field->len elements at field->offset */
+   if( field->offset < 0 || field->size < 0 || field->len < 0 ||
+       (size_t)field->offset + (size_t)field->size * (size_t)field->len > baselen )
+   {
+      fprintf(stderr,"** field '%s' (offset %d, %d x %d bytes) does not fit "
+                     "in a %zu byte structure\n",
+              field->name, field->offset, field->len, field->size, baselen);
       return 1;
    }
 
@@ -6771,7 +6781,7 @@ int act_disp_ci( nt_opts * opts )
       }
 
       /* should we change disp_raw_data to allow for 64-bit nvalues? */
-      disp_raw_data(data, nim->datatype, len64 / nim->nbyper, space, 1);
+      disp_raw_data(data, nim->datatype, (int)(len64 / nim->nbyper), space, 1);
 
       nifti_image_free(nim);
    }
@@ -7575,7 +7585,7 @@ void * nt_read_header(const char * fname, int * nver, int * swapped, int check,
  *
  * the returned object is a (max 4-D) nifti_image
  *----------------------------------------------------------------------*/
-nifti_image * nt_read_bricks(nt_opts * opts, char * fname, int len,
+nifti_image * nt_read_bricks(nt_opts * opts, char * fname, int64_t len,
                              int64_t * list, nifti_brick_list * NBL)
 {
     nifti_image * nim;
@@ -7621,8 +7631,8 @@ nifti_image * nt_read_bricks(nt_opts * opts, char * fname, int len,
             disp_raw_data(opts->new_dim, DT_INT64, 8, ' ', 1);
             printf("   new_datatype = %d\n", opts->new_datatype);
             if( list && len > 0 ) {
-                printf("   brick_list[%d] = ", len);
-                disp_raw_data(list, DT_INT64, len, ' ', 1);
+                printf("   brick_list[%" PRId64 "] = ", len);
+                disp_raw_data(list, DT_INT64, (int)len, ' ', 1);
             }
             fflush(stdout);  /* disp_raw_data uses stdout */
         }
