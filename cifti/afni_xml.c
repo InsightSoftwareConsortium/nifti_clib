@@ -734,8 +734,9 @@ static int epush(afni_xml_control * xd, const char * ename, const char ** attr)
        if( xd->verb > 3 ) show_attrs(xd, attr, 1);
    }
 
-   /* determine whether we should go into a skip block */
-   if( errs ) xd->dskip = xd->depth;
+   /* determine whether we should go into a skip block; keep the outermost
+      such depth, since that is the one whose pop ends the skip */
+   if( errs && ! xd->dskip ) xd->dskip = xd->depth;
 
    /* if we are in a skip block, do nothing but monitor stack */
    if( xd->dskip ) {
@@ -767,16 +768,16 @@ static int epop(afni_xml_control * xd, const char * ename)
    if( xd->wkeep ) xd->wkeep = 0; /* clear storage continuation */
 
    if( xd->dskip ) {
-      if( xd->dskip == xd->depth ) xd->dskip = 0;  /* clear */
-
       if( xd->verb > 3 )
           fprintf(stderr,"-- skip=%d, depth=%d, skipping pop element '%s'\n",
                   xd->dskip, xd->depth, ename);
+
+      /* clear only after the element has been skipped, so that the stack
+         is not touched at a depth that was never pushed onto it */
+      if( xd->dskip == xd->depth ) xd->dskip = 0;
    } else {
       process_popped_element(xd, ename);
-   }
 
-   if( ! xd->dskip ) {
       xd->stack[xd->depth-1] = NULL;  /* should be irrelevant */
 
       if( xd->verb > 4 ) {
@@ -793,7 +794,21 @@ static int epop(afni_xml_control * xd, const char * ename)
 static int process_popped_element(afni_xml_control * xd, const char * ename)
 {
    afni_xml_t * ax;
+
+   /* a stack slot is filled by the matching epush().  An element that was
+      skipped never fills one, so do not assume this slot holds a struct
+      with a name. */
+   if( xd->depth <= 0 || xd->depth > AXML_MAX_DEPTH ) {
+      if( gAXD.verb ) fprintf(stderr,"** pop at depth %d!\n", xd->depth);
+      return 1;
+   }
+
    ax = xd->stack[xd->depth-1];
+   if( ! ax || ! ax->name ) {
+      if( gAXD.verb ) fprintf(stderr,"** pop of unfilled element '%s'!\n",
+                              ename ? ename : "NULL");
+      return 1;
+   }
 
    if( strcmp(ename, ax->name) ) {
       if( gAXD.verb ) fprintf(stderr,"** pop mismatch!\n");
