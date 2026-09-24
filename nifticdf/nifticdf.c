@@ -11050,6 +11050,8 @@ int nifti_intent_code( const char *name )
    if( name == NULL || *name == '\0' ) return -1 ;
 
    unam = (char *)malloc(strlen(name)+1);
+   if (!unam)
+      return -1 ;
    strcpy(unam,name);
    for( upt=unam ; *upt != '\0' ; upt++ ) *upt = (char)toupper(*upt) ;
 
