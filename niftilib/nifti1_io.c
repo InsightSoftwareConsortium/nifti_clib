@@ -6703,9 +6703,11 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
                nim->nifti_type = NIFTI_FTYPE_ASCII ;
      }
      else if( strcmp(lhs,"header_filename") == 0 ){
+       free(nim->fname) ;   /* the attribute may appear more than once */
        nim->fname = nifti_strdup(rhs) ;
      }
      else if( strcmp(lhs,"image_filename") == 0 ){
+       free(nim->iname) ;
        nim->iname = nifti_strdup(rhs) ;
      }
      else if( strcmp(lhs,"sto_xyz_matrix") == 0 ){
