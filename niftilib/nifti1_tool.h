@@ -140,8 +140,8 @@ int fill_field       (field_s *fp, int type, int offset, int num, const char *na
 int fill_hdr_field_array(field_s * nh_fields);
 int fill_nim_field_array(field_s * nim_fields);
 int fill_ana_field_array(field_s * ah_fields);
-int modify_all_fields(void *basep, nt_opts *opts, field_s *fields, int flen);
-int modify_field     (void * basep, field_s * field, const char * data);
+int modify_all_fields(void *basep, size_t baseplen, nt_opts *opts, field_s *fields, int flen);
+int modify_field     (void * basep, size_t baseplen, field_s * field, const char * data);
 int process_opts     (int argc, const char * argv[], nt_opts * opts);
 int remove_ext_list  (nifti_image * nim, const char ** elist, int len);
 int usage            (const char * prog, int level);
