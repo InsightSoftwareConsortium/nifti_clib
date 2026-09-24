@@ -2109,7 +2109,7 @@ void nifti_mat44_to_orientation( mat44 R , int *icod, int *jcod, int *kcod )
      case -2: i = NIFTI_A2P ; break ;
      case  3: i = NIFTI_I2S ; break ;
      case -3: i = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: assert(0) ; i = 0 ; break ;
    }
 
    switch( jbest*qbest ){
@@ -2119,7 +2119,7 @@ void nifti_mat44_to_orientation( mat44 R , int *icod, int *jcod, int *kcod )
      case -2: j = NIFTI_A2P ; break ;
      case  3: j = NIFTI_I2S ; break ;
      case -3: j = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: assert(0) ; j = 0 ; break ;
    }
 
    switch( kbest*rbest ){
@@ -2129,7 +2129,7 @@ void nifti_mat44_to_orientation( mat44 R , int *icod, int *jcod, int *kcod )
      case -2: k = NIFTI_A2P ; break ;
      case  3: k = NIFTI_I2S ; break ;
      case -3: k = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: assert(0) ; k = 0 ; break ;
    }
 
    *icod = i ; *jcod = j ; *kcod = k ;
