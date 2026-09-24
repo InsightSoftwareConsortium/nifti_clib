@@ -6203,7 +6203,7 @@ nifti_image * nifti_read_ascii_image(znzFile fp, const char *fname, int flen,
               fname, slen);
 
    if( slen > 65530 ) slen = 65530 ;
-   sbuf = (char *)calloc(sizeof(char), (size_t)(slen+1)) ;
+   sbuf = (char *)calloc((size_t)(slen+1), sizeof(char)) ;
    if( !sbuf ){
       fprintf(stderr,"** %s: failed to alloc %d bytes for sbuf",lfunc,65530);
       return NULL;
@@ -8412,7 +8412,7 @@ static int unescape_string( char *str )
      } else if( str[ii] == CR ) {  /* is a carriage return */
 
         if( str[ii+1] == LF ){ str[jj] = LF ; ii++ ; nn++ ; }  /* CR LF */
-        else                 { str[jj] = LF ;      ; nn++ ; }  /* CR only */
+        else                 { str[jj] = LF ; nn++ ; }  /* CR only */
 
      } else { /* is a normal character, just copy to output */
 
