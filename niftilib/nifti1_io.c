@@ -411,6 +411,9 @@ static const nifti_type_ele nifti_type_list[] = {
 };
 
 /*---------------------------------------------------------------------------*/
+/* Defined in both libniftiio and libnifti2; linkage pending that duplication. */
+int nifti_fileexists(const char* fname);
+
 /* prototypes for internal functions - not part of exported library          */
 
 /* extension routines */
@@ -2819,16 +2822,26 @@ char * nifti_findhdrname(const char* fname)
    strcat(hdrname,elist[efirst]);
    #ifdef FSLSTYLE
    if (nifti_fileexists(hdrname)) {
-      free(basename);
+      /* basename is read by the error message below, so it cannot be
+         freed here; gzname's allocation is used at once, so it has to be
+         checked; and a library reports an ambiguous name to its caller
+         rather than ending the process, which means every path out of
+         here now has to release what it holds. */
       char *gzname = (char *)calloc(sizeof(char),strlen(hdrname)+8);
+      if( !gzname ){
+         fprintf(stderr,"** nifti_findhdrname: failed to alloc gzname\n");
+         free(basename); free(hdrname);
+         return NULL;
+      }
       strcpy(gzname, hdrname);
       strcat(gzname,extzip);
       if (nifti_fileexists(gzname)) {
          fprintf(stderr,"Image Exception : Multiple possible filenames detected for basename (*.nii, *.nii.gz): %s\n", basename);
-         free(gzname);
-         exit(134);
+         free(gzname); free(basename); free(hdrname);
+         return NULL;
       }
       free(gzname);
+      free(basename);
       return hdrname;
    }
    #else
@@ -3763,8 +3776,15 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
   nim->nv   = nim->dim[6] = nhdr.dim[6];
   nim->nw   = nim->dim[7] = nhdr.dim[7];
 
-  for( ii=1, nim->nvox=1; ii <= nhdr.dim[0]; ii++ )
+  /* the product of the dimensions becomes an allocation size, so refuse
+     the header rather than let it wrap.  nvox is a size_t here, where the
+     NIFTI-2 library uses int64_t, so the bound is SIZE_MAX. */
+  for( ii=1, nim->nvox=1; ii <= nhdr.dim[0]; ii++ ){
+     if( nhdr.dim[ii] > 0 && nim->nvox > SIZE_MAX / (size_t)nhdr.dim[ii] ){
+        free(nim); ERREX("dim[] overflows the voxel count");
+     }
      nim->nvox *= nhdr.dim[ii];
+  }
 
   /**- set the type of data in voxels and how many bytes per voxel */
 
@@ -3772,6 +3792,11 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
 
   nifti_datatype_sizes( nim->datatype , &(nim->nbyper) , &(nim->swapsize) ) ;
   if( nim->nbyper == 0 ){ free(nim); ERREX("bad datatype"); }
+
+  /* nifti_get_volsize() multiplies these two */
+  if( nim->nvox > SIZE_MAX / (size_t)nim->nbyper ){
+     free(nim); ERREX("dim[] and datatype overflow the volume size");
+  }
 
   /**- set the grid spacings */
 
@@ -4290,13 +4315,6 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
    /**- convert all nhdr fields to nifti_image fields */
    nim = nifti_convert_nhdr2nim(nhdr,hfile);
 
-   #ifdef REJECT_COMPLEX
-   if ((nim->datatype == DT_COMPLEX64) || (nim->datatype == DT_COMPLEX128) || (nim->datatype == DT_COMPLEX256)) {
-      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX64): use fslcomplex to manipulate: %s\n", hname);
-      exit(13);
-    }
-    #endif
-
    if( nim == NULL ){
       znzclose( fp ) ;                                   /* close the file */
       if( g_opts.debug > 0 )
@@ -4304,6 +4322,13 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       free(hfile); /* had to save this for debug message */
       return NULL;
    }
+
+   #ifdef REJECT_COMPLEX
+   if ((nim->datatype == DT_COMPLEX64) || (nim->datatype == DT_COMPLEX128) || (nim->datatype == DT_COMPLEX256)) {
+      fprintf(stderr,"Image Exception Unsupported datatype (COMPLEX64): use fslcomplex to manipulate: %s\n", hname);
+      exit(13);
+    }
+    #endif
 
    if( g_opts.debug > 3 ){
       fprintf(stderr,"+d nifti_image_read(), have nifti image:\n");
@@ -6703,9 +6728,11 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
                nim->nifti_type = NIFTI_FTYPE_ASCII ;
      }
      else if( strcmp(lhs,"header_filename") == 0 ){
+       free(nim->fname) ;   /* the attribute may appear more than once */
        nim->fname = nifti_strdup(rhs) ;
      }
      else if( strcmp(lhs,"image_filename") == 0 ){
+       free(nim->iname) ;
        nim->iname = nifti_strdup(rhs) ;
      }
      else if( strcmp(lhs,"sto_xyz_matrix") == 0 ){
