@@ -3763,8 +3763,15 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
   nim->nv   = nim->dim[6] = nhdr.dim[6];
   nim->nw   = nim->dim[7] = nhdr.dim[7];
 
-  for( ii=1, nim->nvox=1; ii <= nhdr.dim[0]; ii++ )
+  /* the product of the dimensions becomes an allocation size, so refuse
+     the header rather than let it wrap.  nvox is a size_t here, where the
+     NIFTI-2 library uses int64_t, so the bound is SIZE_MAX. */
+  for( ii=1, nim->nvox=1; ii <= nhdr.dim[0]; ii++ ){
+     if( nhdr.dim[ii] > 0 && nim->nvox > SIZE_MAX / (size_t)nhdr.dim[ii] ){
+        free(nim); ERREX("dim[] overflows the voxel count");
+     }
      nim->nvox *= nhdr.dim[ii];
+  }
 
   /**- set the type of data in voxels and how many bytes per voxel */
 
@@ -3772,6 +3779,11 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
 
   nifti_datatype_sizes( nim->datatype , &(nim->nbyper) , &(nim->swapsize) ) ;
   if( nim->nbyper == 0 ){ free(nim); ERREX("bad datatype"); }
+
+  /* nifti_get_volsize() multiplies these two */
+  if( nim->nvox > SIZE_MAX / (size_t)nim->nbyper ){
+     free(nim); ERREX("dim[] and datatype overflow the volume size");
+  }
 
   /**- set the grid spacings */
 
