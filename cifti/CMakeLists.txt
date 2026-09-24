@@ -68,4 +68,14 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
                     -input ${CMAKE_CURRENT_LIST_DIR}/testdata/deep_nesting.xml )
   set_tests_properties( ${TEST_PREFIX}_deep_nesting
             PROPERTIES PASS_REGULAR_EXPRESSION "BrainModel" )
+
+  # A -output path that cannot be opened must be reported and refused, not
+  # written to anyway.
+  add_test( NAME ${TEST_PREFIX}_write_failure
+            COMMAND ${CMAKE_COMMAND}
+                    -DTOOL=$<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}cifti_tool>
+                    -DINPUT=${CMAKE_CURRENT_LIST_DIR}/testdata/cext_unterminated.nii
+                    -DBADOUT=${CMAKE_CURRENT_BINARY_DIR}/no_such_dir/out.txt
+                    -DGOODOUT=${CMAKE_CURRENT_BINARY_DIR}/write_failure_ok.txt
+                    -P ${CMAKE_CURRENT_LIST_DIR}/test_write_failure.cmake )
 endif()
