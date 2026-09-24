@@ -32,6 +32,12 @@ project(NIFTI
         DESCRIPTION "Niftilib is a set of i/o libraries for reading and writing files in the nifti-1 data format. nifti-1 is a binary file format for storing medical image data, e.g. magnetic resonance image (MRI) and functional MRI (fMRI) brain images."
         LANGUAGES C)
 
+# Sources needing POSIX interfaces (strdup, popen) request them with
+# _POSIX_C_SOURCE at the top of the file.
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 include(nifti_macros)
 
@@ -163,7 +169,12 @@ if (NIFTI_BUILD_TESTING )
   include(FetchContent) # fetch data a configure time to simplify tests
   # If new or changed data is needed, add that data to the https://github.com/NIFTI-Imaging/nifti-test-data repo
   # make a new release, and then update the URL and hash (shasum -a 256 <downloaded tarball>).
-  cmake_policy(SET CMP0169 OLD)
+  # CMP0169 (deprecating FetchContent_Populate) only exists from CMake 3.30;
+  # setting it unconditionally is a hard error on every earlier release,
+  # including the CMake 3.28 that Ubuntu 24.04 ships.
+  if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+  endif()
   FetchContent_Declare( fetch_testing_data
           URL      https://github.com/NIFTI-Imaging/nifti-test-data/archive/v3.0.2.tar.gz
           URL_HASH SHA256=5dafec078151018da7aaf3c941bd31f246f590bc34fa3fef29ce77a773db16a6
