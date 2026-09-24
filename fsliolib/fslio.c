@@ -918,7 +918,7 @@ size_t FslWriteVolumes(FSLIO *fslio, const void *buffer, size_t nvols)
     size_t bytes_written;
     size_t nbytes;
     long int bpv = fslio->niftiptr->nbyper;  /* bytes per voxel */
-    nbytes = nvols * FslGetVolSize(fslio) * bpv;
+    nbytes = nvols * FslGetVolSize(fslio) * (size_t)bpv;
 
     if ( (FslBaseFileType(FslGetFileType(fslio))==FSL_TYPE_ANALYZE)
          && (FslGetLeftRightOrder(fslio)==FSL_NEUROLOGICAL) ) {
@@ -1076,7 +1076,7 @@ size_t FslReadRowSeries(FSLIO *fslio, void *buffer, short row, short slice, size
     if ((slice<0) || (slice>=z)) FSLIOERR("FslReadRowSeries: slice outside valid range");
     if ((row<0) || (row>=y)) FSLIOERR("FslReadRowSeries: row outside valid range");
 
-    rowbytes = x * (FslGetDataType(fslio, &type)) / 8;
+    rowbytes = (size_t)x * (size_t)(FslGetDataType(fslio, &type)) / 8;
     slbytes = rowbytes * y;
     volbytes = slbytes * z;
 
@@ -1142,7 +1142,8 @@ size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, sho
     volbytes = (size_t)xdim * (size_t)ydim * (size_t)zdim * wordsize;
 
     orig_offset = (size_t)znztell(fslio->fileptr);
-    offset = ((ydim * zVox + yVox) * xdim + xVox) * wordsize;
+    offset = (((size_t)ydim * (size_t)zVox + (size_t)yVox) * (size_t)xdim
+              + (size_t)xVox) * (size_t)wordsize;
     znzseek(fslio->fileptr,(znz_off_t)offset,SEEK_CUR);
 
     for (n=0; n<nvols; n++) {
@@ -1187,7 +1188,8 @@ size_t FslGetVolSize(FSLIO *fslio)
   /* returns number of voxels per 3D volume */
   if (fslio==NULL)  FSLIOERR("FslGetVolSize: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
-    return (fslio->niftiptr->nx * fslio->niftiptr->ny * fslio->niftiptr->nz);
+    return (size_t)fslio->niftiptr->nx * (size_t)fslio->niftiptr->ny *
+           (size_t)fslio->niftiptr->nz;
   }
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
