@@ -197,6 +197,10 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
       if( reset_xml_buf(xd, &buf, &bsize) ) break;
 
       blen = (unsigned)fread(buf, 1, (size_t)bsize, fp);
+      if( ferror(fp) ) {
+         fprintf(stderr,"** failed to read XML file '%s'\n", fname);
+         break;
+      }
 
       /* check for early termination */
       bshort = loc_strnlen(buf, blen);
@@ -207,7 +211,9 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
          blen = (unsigned)bshort;
       }
 
-      done = blen < (unsigned)  bsize;
+      /* feof() also stops a file ending exactly on a buffer boundary,
+         sparing a final read that can only return zero */
+      done = blen < (unsigned)  bsize || feof(fp);
 
       if(xd->verb > 4) fprintf(stderr,"-- XML_Parse # %d\n", pcount);
       pcount++;
