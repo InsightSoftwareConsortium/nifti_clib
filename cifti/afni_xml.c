@@ -412,7 +412,14 @@ afni_xml_t * new_afni_xml(const char * name)
    newp->xparent = NULL;
    newp->xchild  = NULL;
 
-   if( name ) newp->name = strdup(name);
+   if( name ) {
+      newp->name = strdup(name);
+      if( ! newp->name ) {
+         fprintf(stderr,"** new_afni_xml: failed to copy name '%s'\n", name);
+         free(newp);
+         return NULL;
+      }
+   }
 
    return newp;
 }
@@ -457,6 +464,11 @@ int axml_add_attrs(afni_xml_t * ax, const char ** attr)
    for(c = 0, aind = 0; attr[c]; c += 2, aind++) {
       ax->attrs.name[aind]  = strdup(strip_whitespace(attr[c],0));
       ax->attrs.value[aind] = strdup(strip_whitespace(attr[c+1],0));
+      if( ! ax->attrs.name[aind] || ! ax->attrs.value[aind] ) {
+         fprintf(stderr,"** NAX: failed to copy attribute %d\n", aind);
+         ax->attrs.length = aind+1; /* so the partial pair is still freed */
+         return 1;
+      }
    }
 
    return 0;
@@ -838,7 +850,11 @@ static afni_xml_t * make_afni_xml(const char * ename, const char ** attr)
    newp = new_afni_xml(ename);
    if( ! newp ) return NULL;
 
-   axml_add_attrs(newp, attr);
+   /* a failure here is an allocation failure; epush() skips on NULL */
+   if( axml_add_attrs(newp, attr) ) {
+      axml_free_xml_t(newp);
+      return NULL;
+   }
 
    return newp;
 }
