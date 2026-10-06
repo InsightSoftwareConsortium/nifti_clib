@@ -80,11 +80,9 @@ static nifti_image * generate_reference_image( const char * write_image_filename
   reference_header.magic[1]='+';
   reference_header.magic[2]='1';
   reference_header.magic[3]='\0';
-  /* String is purposfully too long */
-  strncpy(reference_header.intent_name,"PHANTOM_DATA to be used for regression testing the nifti reader/writer",sizeof(reference_header.intent_name));
-  reference_header.intent_name[sizeof(reference_header.intent_name) - 1] = 0;
-  strncpy(reference_header.descrip,"This is a very long dialog here to use up more than 80 characters of space to test to see if the code is robust enough to deal appropriately with very long and obnoxious lines.",sizeof(reference_header.descrip));
-  reference_header.descrip[sizeof(reference_header.descrip) - 1] = 0;
+  /* String is purposefully too long */
+  strlcpy(reference_header.intent_name,"PHANTOM_DATA to be used for regression testing the nifti reader/writer",sizeof(reference_header.intent_name));
+  strlcpy(reference_header.descrip,"This is a very long dialog here to use up more than 80 characters of space to test to see if the code is robust enough to deal appropriately with very long and obnoxious lines.",sizeof(reference_header.descrip));
 
   {
   int nbyper;
@@ -492,7 +490,7 @@ int main (int argc, const char *argv[])
   snprintf(buf,sizeof(buf),"nifti_datatype_string %d",constant);     \
   PrintTest(                                   \
             buf,                                        \
-            nifti_is_inttype(constant) != rval,         \
+            nifti_is_inttype(constant) != (rval),       \
             true,                            \
             &Errors);                                   \
   }
@@ -620,7 +618,7 @@ int main (int argc, const char *argv[])
   nifti_datatype_sizes(constant,&nbyper,&swapsize);             \
   PrintTest(                                           \
             buf,                                                \
-            nbyper != Nbyper || swapsize != Swapsize,           \
+            nbyper != (Nbyper) || swapsize != (Swapsize),           \
             true,                                    \
             &Errors);                                           \
   }

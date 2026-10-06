@@ -145,9 +145,10 @@ size_t znzread(void* buf, size_t size, size_t nmemb, znzFile file)
     while( remain > 0 ) {
        n2read = (remain < ZNZ_MAX_BLOCK_SIZE) ? (unsigned)remain : ZNZ_MAX_BLOCK_SIZE;
        nread = gzread(file->zfptr, (void *)cbuf, n2read);
-       if( nread < 0 ) return nread; /* returns -1 on error */
+       /* 0, not gzread's -1: this returns size_t, where -1 is SIZE_MAX. */
+       if( nread < 0 ) return 0;
 
-       remain -= nread;
+       remain -= (size_t)nread;
        cbuf += nread;
 
        /* require reading n2read bytes, so we don't get stuck */
@@ -178,10 +179,10 @@ size_t znzwrite(const void* buf, size_t size, size_t nmemb, znzFile file)
        n2write = (remain < ZNZ_MAX_BLOCK_SIZE) ? (unsigned)remain : ZNZ_MAX_BLOCK_SIZE;
        nwritten = gzwrite(file->zfptr, (const void *)cbuf, n2write);
 
-       /* gzread returns 0 on error, but in case that ever changes... */
-       if( nwritten < 0 ) return nwritten;
+       /* gzwrite returns 0 on error, but in case that ever changes... */
+       if( nwritten < 0 ) return 0;
 
-       remain -= nwritten;
+       remain -= (size_t)nwritten;
        cbuf += nwritten;
 
        /* require writing n2write bytes, so we don't get stuck */
@@ -297,18 +298,30 @@ int znzprintf(znzFile stream, const char *format, ...)
   int retval=0;
   char *tmpstr;
   va_list va;
-  if (stream==NULL) { return 0; }
+  /* the printf family reports failure with a negative value; 0 means an
+     empty write succeeded, so it cannot be used for the failures below */
+  if (stream==NULL) { return -1; }
   va_start(va, format);
 #ifdef HAVE_ZLIB
   if (stream->zfptr!=NULL) {
     size_t size;  /* local to HAVE_ZLIB block */
-    size = strlen(format) + 1000000;  /* overkill I hope */
+    int written;
+    size = strlen(format) + 1000000;  /* still generous, but now a bound */
     tmpstr = (char *)calloc(1, size);
     if( tmpstr == NULL ){
        fprintf(stderr,"** ERROR: znzprintf failed to alloc %zu bytes\n", size);
-       return retval;
+       va_end(va);
+       return -1;
     }
-    vsprintf(tmpstr,format,va);
+    written = vsnprintf(tmpstr,size,format,va);
+    if( written < 0 || (size_t)written >= size ){
+       /* writing the truncated text would put a partial record in the
+          file and report it as a complete one, so write nothing */
+       fprintf(stderr,"** ERROR: znzprintf output truncated at %zu bytes\n", size-1);
+       free(tmpstr);
+       va_end(va);
+       return -1;
+    }
     retval=gzprintf(stream->zfptr,"%s",tmpstr);
     free(tmpstr);
   } else

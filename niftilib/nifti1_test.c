@@ -19,7 +19,6 @@ int main( int argc , const char *argv[] )
    nifti_image *nim ;
    int          iarg=1 , outmode=1 , argn, usegzip=0;
    char        *tmpstr;
-   size_t       ll;
 
    if( argc < 2 || strcmp(argv[1],"-help") == 0 ){
      printf("Usage: nifti1_test [-n2|-n1|-na|-a2] infile [prefix]\n"
@@ -79,24 +78,24 @@ int main( int argc , const char *argv[] )
    free(nim->fname) ;
    free(nim->iname) ;
 
-   ll = strlen(argv[iarg]) ;
+   size_t ll = strlen(argv[iarg]) + 8 ;
    tmpstr = nifti_makebasename(argv[iarg]);
-   nim->fname = (char *)calloc(1,ll+8) ; strcpy(nim->fname,tmpstr) ;
-   nim->iname = (char *)calloc(1,ll+8) ; strcpy(nim->iname,tmpstr) ;
+   nim->fname = (char *)calloc(1,ll) ; strlcpy(nim->fname, tmpstr, ll) ;
+   nim->iname = (char *)calloc(1,ll) ; strlcpy(nim->iname, tmpstr, ll) ;
    free(tmpstr);
    if( nim->nifti_type == 1 ){
-     strcat(nim->fname,".nii") ;
-     strcat(nim->iname,".nii") ;
+     strlcat(nim->fname, ".nii", ll) ;
+     strlcat(nim->iname, ".nii", ll) ;
    } else if ( nim->nifti_type == 3 ){
-     strcat(nim->fname,".nia") ;
-     strcat(nim->iname,".nia") ;
+     strlcat(nim->fname, ".nia", ll) ;
+     strlcat(nim->iname, ".nia", ll) ;
    } else {
-     strcat(nim->fname,".hdr") ;
-     strcat(nim->iname,".img") ;
+     strlcat(nim->fname, ".hdr", ll) ;
+     strlcat(nim->iname, ".img", ll) ;
    }
    if (usegzip) {
-     strcat(nim->fname,".gz");
-     strcat(nim->iname,".gz");
+     strlcat(nim->fname, ".gz", ll);
+     strlcat(nim->iname, ".gz", ll);
    }
    if( nifti_image_write_status( nim ) ) {
       fprintf(stderr, "** failed to write nifti_image\n");

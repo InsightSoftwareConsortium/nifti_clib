@@ -702,7 +702,7 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
       return 1;
    }
    cp = opts->command + len;
-   remain -= len;
+   remain -= (size_t)len;
 
    /* get the rest, with special attention to input files */
    for( int ac = 1; ac < argc; ac++ )
@@ -723,11 +723,11 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
       if( has_space ) len = snprintf(cp, remain, " '%s'", argv[ac]);
       else            len = snprintf(cp, remain, " %s",   argv[ac]);
 
-      if( len < 0 || len >= remain ) {
+      if( len < 0 || (size_t)len >= remain ) {
          fprintf(stderr,"FCS: error parsing command, continuing...\n");
          return 1;
       }
-      remain -= len;
+      remain -= (size_t)len;
 
       /* infiles is okay, but after the *next* argument, we may skip files */
       /* (danger, will robinson!  hack alert!) */
@@ -760,7 +760,7 @@ int add_int(int_list * ilist, int val)
 {
    if( ilist->len == 0 ) ilist->list = NULL;  /* just to be safe */
    ilist->len++;
-   ilist->list = (int *)realloc(ilist->list,ilist->len*sizeof(int));
+   ilist->list = (int *)realloc(ilist->list, (size_t)ilist->len * sizeof(int));
    if( ! ilist->list ){
       fprintf(stderr,"** failed to alloc %d (int *) elements\n",ilist->len);
       return -1;
@@ -781,7 +781,7 @@ int add_string(str_list * slist, const char * str)
 {
    if( slist->len == 0 ) slist->list = NULL;  /* just to be safe */
    slist->len++;
-   slist->list = (const char **)realloc(slist->list,slist->len*sizeof(char *));
+   slist->list = (const char **)realloc(slist->list, (size_t)slist->len * sizeof(char *));
    if( ! slist->list ){
       fprintf(stderr,"** failed to alloc %d (char *) elements\n",slist->len);
       return -1;
@@ -1865,6 +1865,7 @@ int act_add_exts( nt_opts * opts )
          }
 
          if( nifti_add_extension(nim, ext, elen, opts->etypes.list[ec]) ){
+            free(edata);   /* may hold the file contents read just above */
             nifti_image_free(nim);
             return 1;
          }
@@ -1935,14 +1936,14 @@ static char * read_file_text(const char * filename, int * length)
 
    /* allocate the bytes, and fill them with the file contents */
 
-   text = (char *)malloc(len * sizeof(char));
+   text = (char *)malloc((size_t)len * sizeof(char));
    if( !text ) {
       fprintf(stderr,"** RFT: failed to allocate %d bytes\n", len);
       fclose(fp);
       return NULL;
    }
 
-   bytes = fread(text, sizeof(char), len, fp);
+   bytes = fread(text, sizeof(char), (size_t)len, fp);
    fclose(fp); /* in any case */
 
    if( bytes != (size_t)len ) {
@@ -2140,7 +2141,7 @@ int remove_ext_list( nifti_image * nim, const char ** elist, int len )
    if( g_debug > 2 )
       fprintf(stderr,"+d removing %d exts from '%s'\n", len, nim->fname );
 
-   if( ! (marks = (int *)calloc(nim->num_ext, sizeof(int))) ) {
+   if( ! (marks = (int *)calloc((size_t)(nim->num_ext),sizeof(int))) ) {
       fprintf(stderr,"** failed to alloc %d marks\n",nim->num_ext);
       return -1;
    }
@@ -2277,7 +2278,7 @@ int act_diff_nims( nt_opts * opts )
    if( ! nim0 ) return 1;  /* errors have been printed */
 
    nim1 = nt_image_read(opts, opts->infiles.list[1], 0);
-   if( ! nim1 ){ free(nim0); return 1; }
+   if( ! nim1 ){ nifti_image_free(nim0); return 1; }
 
    if( g_debug > 1 )
       fprintf(stderr,"\n-d nifti_image diffs between '%s' and '%s'...\n",
@@ -2606,6 +2607,7 @@ int act_mod_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -2615,6 +2617,7 @@ int act_mod_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -2623,6 +2626,8 @@ int act_mod_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -2727,6 +2732,7 @@ int act_swap_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -2736,6 +2742,7 @@ int act_swap_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -2744,6 +2751,8 @@ int act_swap_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3022,10 +3031,10 @@ int modify_field(void * basep, field_s * field, const char * data)
          case NT_DT_STRING:
          {
             char * dest = (char *)basep + field->offset;
-            nchars = dataLength;
-            strncpy(dest, data, field->len);
+            nchars = (int)dataLength;
+            strncpy(dest, data, (size_t)(field->len));
             if( nchars < field->len )  /* clear the rest */
-               memset(dest+nchars, '\0', field->len-nchars);
+               memset(dest+nchars, '\0', (size_t)(field->len-nchars));
          }
          break;
    }
@@ -3347,8 +3356,7 @@ int fill_field( field_s * fp, int type, int offset, int num, const char * name )
    fp->size   = 1;     /* init before check */
    fp->len    = num;
 
-   strncpy(fp->name, name, sizeof(fp->name));
-   fp->name[sizeof(fp->name) - 1] = 0;
+   strlcpy(fp->name, name, sizeof(fp->name));
 
    switch( type ){
       case DT_UNKNOWN:
@@ -4261,8 +4269,9 @@ nifti_image * nt_read_bricks(nt_opts * opts, const char * fname, int len, int * 
 
     /* now populate NBL (can be based only on len and nim) */
     NBL->nbricks = len;
-    NBL->bsize = (size_t)nim->nbyper * nim->nx * nim->ny * nim->nz;
-    NBL->bricks = (void **)calloc(NBL->nbricks, sizeof(void *));
+    NBL->bsize = (size_t)nim->nbyper * (size_t)nim->nx
+                * (size_t)nim->ny * (size_t)nim->nz;
+    NBL->bricks = (void **)calloc((size_t)(NBL->nbricks), (size_t)(sizeof(void *)));
     if( !NBL->bricks ){
         fprintf(stderr,"** NRB: failed to alloc %d pointers\n",NBL->nbricks);
         nifti_image_free(nim);
