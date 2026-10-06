@@ -45,7 +45,7 @@ int axio_read_cifti_file(const char * fname, int get_ndata,
 
    if( !fname || !nim_out || !ax_out ) {
       fprintf(stderr,"** axio_CIFTI: NULL inputs %p, %p, %p\n",
-              fname, (void *)nim_out, (void *)ax_out);
+              (const void *)fname, (void *)nim_out, (void *)ax_out);
       return 1;
    }
 
