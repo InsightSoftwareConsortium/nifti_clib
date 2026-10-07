@@ -297,18 +297,30 @@ int znzprintf(znzFile stream, const char *format, ...)
   int retval=0;
   char *tmpstr;
   va_list va;
-  if (stream==NULL) { return 0; }
+  /* the printf family reports failure with a negative value; 0 means an
+     empty write succeeded, so it cannot be used for the failures below */
+  if (stream==NULL) { return -1; }
   va_start(va, format);
 #ifdef HAVE_ZLIB
   if (stream->zfptr!=NULL) {
     size_t size;  /* local to HAVE_ZLIB block */
-    size = strlen(format) + 1000000;  /* overkill I hope */
+    int written;
+    size = strlen(format) + 1000000;  /* still generous, but now a bound */
     tmpstr = (char *)calloc(1, size);
     if( tmpstr == NULL ){
        fprintf(stderr,"** ERROR: znzprintf failed to alloc %zu bytes\n", size);
-       return retval;
+       va_end(va);
+       return -1;
     }
-    vsprintf(tmpstr,format,va);
+    written = vsnprintf(tmpstr,size,format,va);
+    if( written < 0 || (size_t)written >= size ){
+       /* writing the truncated text would put a partial record in the
+          file and report it as a complete one, so write nothing */
+       fprintf(stderr,"** ERROR: znzprintf output truncated at %zu bytes\n", size-1);
+       free(tmpstr);
+       va_end(va);
+       return -1;
+    }
     retval=gzprintf(stream->zfptr,"%s",tmpstr);
     free(tmpstr);
   } else
