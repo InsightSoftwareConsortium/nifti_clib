@@ -26,3 +26,28 @@ if(NIFTI_BUILD_APPLICATIONS)
   install_nifti_target(${NIFTI_PACKAGE_PREFIX}afni_xml_tool)
   install_nifti_target(${NIFTI_PACKAGE_PREFIX}cifti_tool)
 endif()
+
+if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
+  set(TEST_PREFIX "${NIFTI_PACKAGE_PREFIX}cifti")
+  # An unrecognized MatrixIndicesMap child is skipped, not dispatched on.
+  add_test( NAME ${TEST_PREFIX}_mim_summary_unknown_child
+            COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}cifti_tool>
+                    -as_cext -eval_cext -eval_type show_summary
+                    -input ${CMAKE_CURRENT_LIST_DIR}/testdata/mim_unknown_child.xml )
+  # A recognized child is still displayed.
+  add_test( NAME ${TEST_PREFIX}_mim_summary_known_child
+            COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}cifti_tool>
+                    -as_cext -eval_cext -eval_type show_summary
+                    -input ${CMAKE_CURRENT_LIST_DIR}/testdata/mim_known_child.xml )
+  set_tests_properties( ${TEST_PREFIX}_mim_summary_known_child
+                        PROPERTIES PASS_REGULAR_EXPRESSION "BrainModel" )
+
+  # An extension payload that fills esize-8 with no NUL must not be read
+  # past its end; the regex pins that the payload is still parsed.
+  add_test( NAME ${TEST_PREFIX}_tool_unterminated_cext
+            COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}cifti_tool>
+                    -input ${CMAKE_CURRENT_LIST_DIR}/testdata/cext_unterminated.nii
+                    -eval_cext -eval_type show_summary )
+  set_tests_properties( ${TEST_PREFIX}_tool_unterminated_cext
+            PROPERTIES PASS_REGULAR_EXPRESSION "MapName : demo" )
+endif()
