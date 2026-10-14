@@ -1892,7 +1892,7 @@ static double T5,T6,T7,T8,T9,T10,T12,T13;
 /*
      Check arguments
 */
-    if(!(*which < 1 && *which > 4)) goto S30;
+    if(!(*which < 1 || *which > 4)) goto S30;
     if(!(*which < 1)) goto S10;
     *bound = 1.0e0;
     goto S20;
