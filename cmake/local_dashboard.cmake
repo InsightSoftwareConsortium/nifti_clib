@@ -32,9 +32,8 @@ function(set_from_env var env_var)
   endif()
 endfunction()
 
-#set_from_env(CTEST_SITE "TRAVIS_APP_HOST" REQUIRED)
 cmake_host_system_information(RESULT CTEST_SITE QUERY HOSTNAME)
-set(CTEST_SITE "travis.${CTEST_SITE}")
+set(CTEST_SITE "local.${CTEST_SITE}")
 set(CTEST_UPDATE_VERSION_ONLY 1)
 
 set_from_env(PARALLEL_LEVEL "PARALLEL_LEVEL" DEFAULT 8)
@@ -59,11 +58,11 @@ if(NOT CTEST_BUILD_NAME)
     set(branch "-$ENV{SYSTEM_PULLREQUEST_SOURCEBRANCH}")
     set(dashboard_git_branch "$ENV{SYSTEM_PULLREQUEST_SOURCEBRANCH}")
     set(dashboard_model "Experimental")
-  elseif(ENV{BUILD_SOURCEBRANCHNAME} STREQUAL "master")
+  elseif("$ENV{BUILD_SOURCEBRANCHNAME}" STREQUAL "master")
     set(branch "-master")
     set(dashboard_git_branch "$ENV{BUILD_SOURCEBRANCHNAME}")
     set(dashboard_model "Continuous")
-  elseif(ENV{BUILD_SOURCEBRANCHNAME} STREQUAL "nightly-master")
+  elseif("$ENV{BUILD_SOURCEBRANCHNAME}" STREQUAL "nightly-master")
     set(branch "-nightly-master")
     set(dashboard_git_branch "$ENV{BUILD_SOURCEBRANCHNAME}")
     set(dashboard_model "Nightly")
@@ -80,7 +79,7 @@ if(NOT CTEST_BUILD_NAME)
   endif()
 
   set(CTEST_BUILD_NAME
-    "$ENV{TRAVIS_OS_NAME}-$ENV{BUILD_BUILDID}${pr}${branch}")
+    "$ENV{RUNNER_OS}-$ENV{BUILD_BUILDID}${pr}${branch}")
 endif()
 
 set(dashboard_cache "

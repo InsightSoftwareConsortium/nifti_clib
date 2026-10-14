@@ -263,7 +263,8 @@ int axio_show_mim_summary(FILE * fp, const char * mesg, afni_xml_t * ax, int ver
 
       for( kid=0; kid<xt->nchild; kid++ ) {
          mind = get_map_index(xt->xchild[kid]);
-         if( kid >= 0 ) MIM_disp_funcs[mind](ofp, xt->xchild[kid], verb);
+         /* get_map_index() returns -1 for an unrecognized element name */
+         if( mind >= 0 ) MIM_disp_funcs[mind](ofp, xt->xchild[kid], verb);
       }
    }
 

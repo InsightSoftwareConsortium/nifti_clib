@@ -148,6 +148,25 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
           )
   #==END NIFTI1 and NIFTI2 common tests ============================================
 
+  # The same guards in the NIFTI-1 library, reached through nifti1_tool.
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_overflow.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_volsize_overflow COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n1_volsize.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] overflows the voxel count" )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
+
+  # The NIFTI-1 library carries the same ASCII reader.
+  add_test( NAME ${TEST_PREFIX}_tool_ascii_dup_attr COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/dup_attr.nia )
+  set_tests_properties( ${TEST_PREFIX}_tool_ascii_dup_attr PROPERTIES PASS_REGULAR_EXPRESSION "dup2.nia" )
+
+  if(FSLSTYLE_NAME_CONFLICTS)
+    add_test( NAME ${TEST_PREFIX}_ambiguous_hdrname
+              COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:${TOOL_NAME}>
+                      -DDIR=${CMAKE_CURRENT_BINARY_DIR}/ambig1
+                      -P ${CMAKE_CURRENT_LIST_DIR}/ambiguous_hdrname.cmake )
+  endif()
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)

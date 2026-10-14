@@ -40,6 +40,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 include(nifti_macros)
+include(nifti_warnings)
 
 set_property(GLOBAL PROPERTY nifti_installed_targets)
 

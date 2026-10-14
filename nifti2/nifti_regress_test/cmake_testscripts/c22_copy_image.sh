@@ -11,6 +11,9 @@ DATA=$2
 OUT_DATA=$(dirname ${DATA}) #Need to write to separate directory
 cd ${OUT_DATA}
 
+
+. "$(dirname "$0")/nii_cmp.sh"
+
 # note the main input file and prefix for all output files
 infile=$DATA/e4.60005.nii.gz
 prefix=out.c22
@@ -42,7 +45,7 @@ ${NT} -copy_image -infile ${prefix}.0.i16.nii.gz \
 ${NT} -copy_image -infile ${prefix}.1.i64.nii.gz   \
                   -prefix ${prefix}.2.0.i16.nii.gz \
                   -convert2dtype NIFTI_TYPE_INT16 -convert_verify
-if cmp ${prefix}.0.i16.nii.gz ${prefix}.2.0.i16.nii.gz
+if nii_cmp ${prefix}.0.i16.nii.gz ${prefix}.2.0.i16.nii.gz
 then
 echo ""
 else
@@ -57,7 +60,7 @@ ${NT} -cbl -infile ${prefix}.0.i16.nii.gz \
 ${NT} -copy_image -infile ${prefix}.1.f32.nii.gz   \
                   -prefix ${prefix}.2.1.i16.nii.gz \
                   -convert2dtype NIFTI_TYPE_INT16 -convert_fail_choice warn
-if cmp ${prefix}.0.i16.nii.gz ${prefix}.2.1.i16.nii.gz
+if nii_cmp ${prefix}.0.i16.nii.gz ${prefix}.2.1.i16.nii.gz
 then
 echo ""
 else
