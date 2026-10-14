@@ -3343,7 +3343,7 @@ int act_mod_hdrs( nt_opts * opts )
       }
 
       /* okay, let's actually trash the data fields */
-      if( modify_all_fields(nhdr, opts, g_hdr1_fields, NT_HDR1_NUM_FIELDS) )
+      if( modify_all_fields(nhdr, sizeof(*nhdr), opts, g_hdr1_fields, NT_HDR1_NUM_FIELDS) )
       {
          free(nhdr);
          return 1;
@@ -3461,7 +3461,7 @@ int act_mod_hdr2s( nt_opts * opts )
       }
 
       /* okay, let's actually trash the data fields */
-      if( modify_all_fields(nhdr, opts, g_hdr2_fields, NT_HDR2_NUM_FIELDS) )
+      if( modify_all_fields(nhdr, sizeof(*nhdr), opts, g_hdr2_fields, NT_HDR2_NUM_FIELDS) )
       {
          free(nhdr);
          return 1;
@@ -3684,7 +3684,7 @@ int act_mod_nims( nt_opts * opts )
                  opts->flist.len, opts->infiles.list[filec]);
 
       /* okay, let's actually trash the data fields */
-      if( modify_all_fields(nim, opts, g_nim2_fields, NT_NIM_NUM_FIELDS) )
+      if( modify_all_fields(nim, sizeof(*nim), opts, g_nim2_fields, NT_NIM_NUM_FIELDS) )
       {
          nifti_image_free(nim);
          return 1;
@@ -3787,7 +3787,7 @@ int write_hdr2_to_file( nifti_2_header * nhdr, const char * fname )
 /*----------------------------------------------------------------------
  * modify all fields in the list
  *----------------------------------------------------------------------*/
-int modify_all_fields( void * basep, nt_opts * opts, field_s * fields, int flen)
+int modify_all_fields( void * basep, size_t baselen, nt_opts * opts, field_s * fields, int flen)
 {
    field_s * fp;
    int       fc, lc;  /* field and list counters */
@@ -3817,7 +3817,7 @@ int modify_all_fields( void * basep, nt_opts * opts, field_s * fields, int flen)
          return 1;
       }
 
-      if( modify_field( basep, fp, opts->vlist.list[lc]) )
+      if( modify_field( basep, baselen, fp, opts->vlist.list[lc]) )
          return 1;
    }
 
@@ -3830,7 +3830,7 @@ int modify_all_fields( void * basep, nt_opts * opts, field_s * fields, int flen)
  *
  * pointer fields are not allowed here
  *----------------------------------------------------------------------*/
-int modify_field(void * basep, field_s * field, const char * data)
+int modify_field(void * basep, size_t baselen, field_s * field, const char * data)
 {
    float         fval;
    const char  * posn = data;
@@ -3844,6 +3844,16 @@ int modify_field(void * basep, field_s * field, const char * data)
    if( dataLength == 0 )
    {
       fprintf(stderr,"** no data for '%s' field modification\n",field->name);
+      return 1;
+   }
+
+   /* every case below writes field->len elements at field->offset */
+   if( field->offset < 0 || field->size < 0 || field->len < 0 ||
+       (size_t)field->offset + (size_t)field->size * (size_t)field->len > baselen )
+   {
+      fprintf(stderr,"** field '%s' (offset %d, %d x %d bytes) does not fit "
+                     "in a %zu byte structure\n",
+              field->name, field->offset, field->len, field->size, baselen);
       return 1;
    }
 
