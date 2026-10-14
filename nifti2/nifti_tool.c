@@ -3905,7 +3905,8 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               ((short *)((char *)basep + field->offset))[fc] = (short)val;
+               { const int16_t sval = (int16_t)val;
+                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(sval), &sval,(size_t)sizeof(sval)); }
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3924,7 +3925,8 @@ int modify_field(void * basep, field_s * field, const char * data)
                           fc,field->len);
                   return 1;
                }
-               ((int *)((char *)basep + field->offset))[fc] = val;
+               { const int32_t ival = (int32_t)val;
+                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(ival), &ival,(size_t)sizeof(ival)); }
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3944,7 +3946,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                           fc,field->len);
                   return 1;
                }
-               ((int64_t *)((char *)basep + field->offset))[fc] = v64;
+               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(v64), &v64,(size_t)sizeof(v64));
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %" PRId64 "\n",
                           fc, field->name, v64);
@@ -3964,7 +3966,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               ((float *)((char *)basep + field->offset))[fc] = fval;
+               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(fval), &fval,(size_t)sizeof(fval));
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %f\n",
                           fc, field->name, fval);
@@ -3985,7 +3987,7 @@ int modify_field(void * basep, field_s * field, const char * data)
                   return 1;
                }
                /* otherwise, we're good */
-               ((double *)((char *)basep + field->offset))[fc] = f64;
+               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(f64), &f64,(size_t)sizeof(f64));
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %f\n",
                           fc, field->name, f64);
@@ -6248,7 +6250,7 @@ int disp_field(const char *mesg, field_s *fieldp, void * str, int nfields, int h
             int    len;
 
             /* start by sucking the pointer stored here */
-            sp = *(char **)((char *)str + fp->offset);
+            memcpy(&sp, (const char *)str + fp->offset, sizeof(sp));
 
             if( ! sp ){ fprintf(stdout,"(NULL)\n");  break; }  /* anything? */
 
@@ -6262,7 +6264,9 @@ int disp_field(const char *mesg, field_s *fieldp, void * str, int nfields, int h
             else if( *sp && !isprint(*sp) )  /* if no termination, it's bad */
                fprintf(stdout,"(non-printable string)\n");
             else  /* woohoo!  a good string */
-               fprintf(stdout,"'%.40s'\n",*(char **)((char *)str + fp->offset));
+               { char * cp;
+                  memcpy(&cp, (const char *)str + fp->offset, sizeof(cp));
+                  fprintf(stdout,"'%.40s'\n", cp); }
             break;
          }
 
@@ -6271,7 +6275,7 @@ int disp_field(const char *mesg, field_s *fieldp, void * str, int nfields, int h
             nifti1_extension * extp;
 
             /* yank the address sitting there into extp */
-            extp = *(nifti1_extension **)((char *)str + fp->offset);
+            memcpy(&extp, (const char *)str + fp->offset, sizeof(extp));
 
             /* the user may use -disp_exts to display all of them */
             if( extp ) disp_nifti1_extension(NULL, extp, 6);
@@ -6332,8 +6336,8 @@ int diff_field(field_s *fieldp, void * str0, void * str1, int nfields)
          {
             nifti1_extension * ext0, * ext1;
 
-            ext0 = *(nifti1_extension **)((char *)str0 + fp->offset);
-            ext1 = *(nifti1_extension **)((char *)str1 + fp->offset);
+            memcpy(&ext0, (const char *)str0 + fp->offset, sizeof(ext0));
+            memcpy(&ext1, (const char *)str1 + fp->offset, sizeof(ext1));
 
             if( ! ext0 && ! ext1 ) break;     /* continue on */
 
