@@ -2822,16 +2822,26 @@ char * nifti_findhdrname(const char* fname)
    strcat(hdrname,elist[efirst]);
    #ifdef FSLSTYLE
    if (nifti_fileexists(hdrname)) {
-      free(basename);
+      /* basename is read by the error message below, so it cannot be
+         freed here; gzname's allocation is used at once, so it has to be
+         checked; and a library reports an ambiguous name to its caller
+         rather than ending the process, which means every path out of
+         here now has to release what it holds. */
       char *gzname = (char *)calloc(sizeof(char),strlen(hdrname)+8);
+      if( !gzname ){
+         fprintf(stderr,"** nifti_findhdrname: failed to alloc gzname\n");
+         free(basename); free(hdrname);
+         return NULL;
+      }
       strcpy(gzname, hdrname);
       strcat(gzname,extzip);
       if (nifti_fileexists(gzname)) {
          fprintf(stderr,"Image Exception : Multiple possible filenames detected for basename (*.nii, *.nii.gz): %s\n", basename);
-         free(gzname);
-         exit(134);
+         free(gzname); free(basename); free(hdrname);
+         return NULL;
       }
       free(gzname);
+      free(basename);
       return hdrname;
    }
    #else
