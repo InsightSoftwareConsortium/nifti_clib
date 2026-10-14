@@ -885,7 +885,7 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
       if( has_space ) len = snprintf(cp, remain, " '%s'", argv[ac]);
       else            len = snprintf(cp, remain, " %s",   argv[ac]);
 
-      if( len < 0 || len >= remain ) {
+      if( len < 0 || (size_t)len >= remain ) {
          fprintf(stderr,"FCS: error parsing command, continuing...\n");
          return 1;
       }
@@ -2367,7 +2367,7 @@ static char * read_file_text(const char * filename, int * length)
    bytes = fread(text, sizeof(char), len64, fp);
    fclose(fp); /* in any case */
 
-   if( bytes != len64 ) {
+   if( bytes != (size_t)len64 ) {
       fprintf(stderr,"** RFT: read only %zu of %" PRId64 " bytes from %s\n",
                      bytes, len64, filename);
       free(text);
