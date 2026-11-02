@@ -1,9 +1,10 @@
 #
 # Compiler warning flags shared by every nifti_clib target.
 #
-# Every flag below has been measured at zero warnings across the whole
-# tree.  A flag is added only once the tree is already clean under it, so
-# that a warning always means a new defect rather than more noise.
+# Every flag in the GCC/Clang and Clang-only blocks has been measured at
+# zero warnings across the whole tree.  A flag is added only once the
+# tree is already clean under it, so that a warning always means a new
+# defect rather than more noise.
 #
 # Run the census before adding a flag:
 #
@@ -15,6 +16,9 @@
 #
 # Warnings are NOT errors by default; set NIFTI_WARNINGS_AS_ERRORS=ON to
 # make CI fail on them.
+#
+# This branch also enables flags that are not yet clean, so CI measures
+# them on every run.  Keep NIFTI_WARNINGS_AS_ERRORS OFF here.
 #
 
 option(NIFTI_ENABLE_WARNINGS "Enable the project's compiler warning set" ON)
@@ -53,6 +57,42 @@ endif()
 if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
   list(APPEND _nifti_warnings
     -Wcomma
+  )
+endif()
+
+# ---------------------------------------------------------------------
+# Ready to promote: measured at zero, not yet in the clean set
+# ---------------------------------------------------------------------
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wcast-qual
+  )
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wnewline-eof
+  )
+endif()
+
+# ---------------------------------------------------------------------
+# Future set: still warns
+# ---------------------------------------------------------------------
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wextra
+    -Wmissing-prototypes
+    -Wsign-conversion
+  )
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang")
+  list(APPEND _nifti_warnings
+    -Wcast-align
+    -Wconditional-uninitialized
+    -Wextra-semi-stmt
+    -Wmissing-variable-declarations
+    -Wshorten-64-to-32
   )
 endif()
 
