@@ -175,6 +175,7 @@ int process(opts_t * opts)
 {
    nifti_image * nim = NULL;
    afni_xml_t  * ax;
+   int           rv = 0;
 
    if( !opts->fin ){ fprintf(stderr, "** missing option '-input'\n"); return 1;}
 
@@ -190,13 +191,13 @@ int process(opts_t * opts)
       return 1;
    }
 
-   if( opts->disp_cext ) disp_cifti_extension(nim, opts);
-   if( opts->eval_cext ) eval_cifti_extension(ax, opts);
+   if( opts->disp_cext ) rv |= disp_cifti_extension(nim, opts);
+   if( opts->eval_cext ) rv |= eval_cifti_extension(ax, opts);
 
    axml_free_xml_t(ax);
    nifti_image_free(nim);
 
-   return 0;
+   return rv ? 1 : 0;
 }
 
 int disp_cifti_extension(nifti_image * nim, opts_t * opts)
