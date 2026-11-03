@@ -18,12 +18,12 @@ function(run_tool expect_result out_var)
   endif()
 endfunction()
 
-run_tool(0 bad_disp -input ${INPUT} -disp_cext -output ${BADOUT})
+run_tool(1 bad_disp -input ${INPUT} -disp_cext -output ${BADOUT})
 if(NOT bad_disp MATCHES "failed to open")
   message(FATAL_ERROR "missing the open-failure diagnostic:\n${bad_disp}")
 endif()
 
-run_tool(0 bad_eval -input ${INPUT} -eval_cext -eval_type show_summary
+run_tool(1 bad_eval -input ${INPUT} -eval_cext -eval_type show_summary
                     -output ${BADOUT})
 if(NOT bad_eval MATCHES "failed to open")
   message(FATAL_ERROR "missing the open-failure diagnostic:\n${bad_eval}")
