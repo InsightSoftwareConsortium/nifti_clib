@@ -10,6 +10,18 @@ else
     export BUILD_TOOL=$1
 fi
 
+# Where the project source lives.  This used to be hard-coded as
+# ../../nifti_clib relative to the build directory, which only resolved
+# when the build tree happened to be a sibling of a source tree named
+# exactly "nifti_clib" -- so the test failed for an in-tree build, for a
+# build directory named anything else, and on CI.
+if [ $# -lt 2 ]
+then
+    echo Missing source directory
+    exit 1
+fi
+SRC_DIR=$2
+
 # Set variables for local install
 export DESTDIR=installed
 export PATH="$PWD/$DESTDIR/usr/local/bin:$PATH"
@@ -28,7 +40,7 @@ cd downstream_example
 cmake \
     -G 'Unix Makefiles' \
     -DCMAKE_MODULE_PATH=../installed/usr/local/share \
-     ../../nifti_clib/real_easy/minimal_example_of_downstream_usage
+    "${SRC_DIR}/real_easy/minimal_example_of_downstream_usage"
 make
 
 echo Success

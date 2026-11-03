@@ -50,29 +50,6 @@
     - convert as in SUMA_Create_Fake_CIFTI()
  * ----------------------------------------------------------------------*/
 
-#ifndef CIF_API
-   #if defined(_WIN32) || defined(__CYGWIN__)
-      #if defined(CIFTI_BUILD_SHARED)
-      #ifdef __GNUC__
-         #define CIF_API __attribute__ ((dllexport))
-      #else
-         #define CIF_API __declspec( dllexport )
-      #endif
-      #elif defined(CIFTI_USE_SHARED)
-      #ifdef __GNUC__
-         #define CIF_API __attribute__ ((dllimport))
-      #else
-         #define CIF_API __declspec( dllimport )
-      #endif
-      #else
-      #define CIF_API
-      #endif
-   #elif (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
-      #define CIF_API __attribute__ ((visibility ("default")))
-   #else
-      #define CIF_API
-   #endif
-#endif
 
 /* --------------------------- structures --------------------------------- */
 
