@@ -145,7 +145,7 @@ static int  show_attrs     (afni_xml_control *, const char **, int);
 
 static int64_t      loc_strnlen     (const char * str, int64_t maxlen);
 static afni_xml_t * make_afni_xml   (const char * ename, const char ** attr);
-static const char * strip_whitespace(const char * str, int slen);
+static char       * strip_whitespace(const char * str, int slen);
 
 /*----------------------- main I/O functions ---------------------------*/
 
@@ -200,7 +200,7 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
    {
       if( reset_xml_buf(xd, &buf, &bsize) ) break;
 
-      blen = fread(buf, 1, bsize, fp);
+      blen = fread(buf, 1, (size_t)bsize, fp);
 
       /* check for early termination */
       bshort = loc_strnlen(buf, blen);
@@ -208,14 +208,14 @@ afni_xml_list axml_read_file(const char * fname, int read_data)
          if( xd->verb > 1 )
             fprintf(stderr,"-- AXML: truncating fbuffer from %u to %" PRId64  "\n",
                     blen, bshort);
-         blen = (int)bshort;
+         blen = (unsigned)bshort;
       }
 
       done = blen < (unsigned)  bsize;
 
       if(xd->verb > 4) fprintf(stderr,"-- XML_Parse # %d\n", pcount);
       pcount++;
-      if( XML_Parse(parser, buf, blen, done) == XML_STATUS_ERROR) {
+      if( XML_Parse(parser, buf, (int)blen, done) == XML_STATUS_ERROR) {
           fprintf(stderr,"** %s at line %u\n",
                   XML_ErrorString(XML_GetErrorCode(parser)),
                   (unsigned int)XML_GetCurrentLineNumber(parser));
@@ -288,7 +288,7 @@ afni_xml_list axml_read_buf(const char * buf_in, int64_t bin_len)
         /*--- replace fread with buffer copy ---*/
 
         /* decide how much to copy and copy */
-        if( bin_remain >= bsize ) blen = bsize;
+        if( bin_remain >= bsize ) blen = (unsigned)bsize;
         else                      blen = bin_remain;
 
         if(blen > 0 && blen <= (unsigned)bsize) {
@@ -303,7 +303,7 @@ afni_xml_list axml_read_buf(const char * buf_in, int64_t bin_len)
 
         if(xd->verb > 4) fprintf(stderr,"-- XML_Parse # %d\n", pcount);
         pcount++;
-        if( XML_Parse(parser, buf, blen, done) == XML_STATUS_ERROR) {
+        if( XML_Parse(parser, buf, (int)blen, done) == XML_STATUS_ERROR) {
             fprintf(stderr,"** %s at line %u\n",
                     XML_ErrorString(XML_GetErrorCode(parser)),
                     (unsigned int)XML_GetCurrentLineNumber(parser));
@@ -451,8 +451,8 @@ int axml_add_attrs(afni_xml_t * ax, const char ** attr)
       return 0;
    }
 
-   ax->attrs.name = (char **)malloc(natr*sizeof(char *));
-   ax->attrs.value = (char **)malloc(natr*sizeof(char *));
+   ax->attrs.name = (char **)malloc((size_t)natr * sizeof(char *));
+   ax->attrs.value = (char **)malloc((size_t)natr * sizeof(char *));
 
    /* failure? */
    if( ! ax->attrs.name || ! ax->attrs.value ) {
@@ -670,7 +670,7 @@ static int reset_xml_buf(afni_xml_control * xd, char ** buf, int * bsize)
         fprintf(stderr,"++ update buf, %d to %d bytes\n",*bsize,xd->buf_size);
 
     *bsize = xd->buf_size;
-    *buf = (char *)safe_realloc(*buf, (*bsize+1) * sizeof(char));
+    *buf = (char *)safe_realloc(*buf, (size_t)(*bsize+1) * sizeof(char));
     if( ! *buf ) {
         fprintf(stderr,"** failed to alloc %d bytes of xml buf!\n", *bsize);
         *bsize = 0;
@@ -830,7 +830,7 @@ static int add_to_xroot_list(afni_xml_control * xd, afni_xml_t * newp)
 
    xd->xroot->len++;
    xd->xroot->xlist = (afni_xml_t **)safe_realloc(xd->xroot->xlist,
-                                     xd->xroot->len * sizeof(afni_xml_t *));
+                                     (size_t)xd->xroot->len * sizeof(afni_xml_t *));
    if( ! xd->xroot->xlist ) {
       fprintf(stderr,"** failed to alloc %d AXMLT pointers\n", xd->xroot->len);
       return 1;
@@ -848,7 +848,7 @@ static int add_to_xchild_list(afni_xml_t * parent, afni_xml_t * child)
 
    parent->nchild++;
    parent->xchild = (afni_xml_t **)safe_realloc(parent->xchild,
-                                   parent->nchild * sizeof(afni_xml_t *));
+                                   (size_t)parent->nchild * sizeof(afni_xml_t *));
    if( ! parent->xchild ) {
       fprintf(stderr,"** failed to alloc %d AXML pointers\n", parent->nchild);
       return 1;
@@ -892,7 +892,7 @@ static int show_attrs(afni_xml_control * xd, const char ** attr, int showd)
 static void free_whitespace(void) { strip_whitespace(NULL,-2); }
 
 /* if slen == 0, use entire length */
-static const char * strip_whitespace(const char * str, int slen)
+static char * strip_whitespace(const char * str, int slen)
 {
    static char * buf = NULL;
    static int    blen = 0;
@@ -902,18 +902,18 @@ static const char * strip_whitespace(const char * str, int slen)
    if(!str && slen == -2){ free(buf); buf=NULL; blen=0; return 0; }
 
    /* if string is long, forget it */
-   if( !str || slen > 1024 ) return str;
+   if( !str || slen > 1024 ) return (char *)str;
 
    len = strlen(str);
    if( slen > 0 && slen < len ) len = slen;
-   if( len <= 0 ) return str;
+   if( len <= 0 ) return (char *)str;
 
    /* make sure we have local space */
    if( len > blen ) { /* allocate a bigger buffer */
-      buf = (char *)safe_realloc(buf, (len+1) * sizeof(char));
+      buf = (char *)safe_realloc(buf, (size_t)(len+1) * sizeof(char));
       if( !buf ) {
          fprintf(stderr,"** failed to alloc wspace buf of len %d\n", len+1);
-         return str;
+         return (char *)str;
       }
       blen = len;
    }
@@ -923,7 +923,7 @@ static const char * strip_whitespace(const char * str, int slen)
 
    if( ifirst == len ) *buf = '\0';
    else {
-      strncpy(buf, str+ifirst, len-ifirst-ilast);
+      strncpy(buf, str+ifirst, (size_t)(len-ifirst-ilast));
       buf[len-ifirst-ilast] = '\0';
    }
 
@@ -975,14 +975,14 @@ static int append_to_string(char ** ostr, int * olen,
 
    newlen = *olen + ilen;
 
-   *ostr = (char *)safe_realloc(*ostr, newlen * sizeof(char));
+   *ostr = (char *)safe_realloc(*ostr, (size_t)newlen * sizeof(char));
    if( !*ostr ) {
       fprintf(stderr,"** AX.A2S: failed to alloc %d chars\n", newlen);
       return 1;
    }
 
    /* copy, starting at old nul char (if any), and terminate */
-   strncpy((*ostr)+*olen-1, istr, ilen);
+   strncpy((*ostr)+*olen-1, istr, (size_t)ilen);
    (*ostr)[newlen-1] = '\0';
    *olen = newlen;
 
