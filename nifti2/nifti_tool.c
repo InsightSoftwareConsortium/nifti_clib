@@ -2844,7 +2844,7 @@ int act_diff_nims( nt_opts * opts )
    if( ! nim0 ) return 1;  /* errors have been printed */
 
    nim1 = nt_image_read(opts, opts->infiles.list[1], 0, 0);
-   if( ! nim1 ){ free(nim0); return 1; }
+   if( ! nim1 ){ nifti_image_free(nim0); return 1; }
 
    if( g_debug > 1 )
       fprintf(stderr,"\n-d nifti_image diffs between '%s' and '%s'...\n",
@@ -3360,6 +3360,7 @@ int act_mod_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
 
@@ -3370,6 +3371,7 @@ int act_mod_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3378,6 +3380,8 @@ int act_mod_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3387,7 +3391,11 @@ int act_mod_hdrs( nt_opts * opts )
          nifti_image_free(nim);
       }
       else if ( swap )
-         swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
+         /* nhdr is a nifti_1_header, so swap it as one.  NIFTI_VERSION()
+            reads the magic string, and a magic of "n+2" would otherwise
+            have swap_nifti_header() treat these 348 bytes as a 540 byte
+            header.  ni_ver 0 and 1 are both 348 byte layouts. */
+         swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr) ? 1 : 0);
 
       /* if all is well, overwrite header in fname dataset */
       (void)write_hdr_to_file(nhdr, fname); /* errors printed in function */
@@ -3478,6 +3486,7 @@ int act_mod_hdr2s( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -3487,6 +3496,7 @@ int act_mod_hdr2s( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3495,6 +3505,8 @@ int act_mod_hdr2s( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
@@ -3504,7 +3516,9 @@ int act_mod_hdr2s( nt_opts * opts )
          nifti_image_free(nim);
       }
       else if ( swap )
-         swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
+         /* nhdr is a nifti_2_header; use the explicit version rather than
+            the magic, which could claim "n+1" and swap 540 bytes as 348 */
+         swap_nifti_header(nhdr, 2);
 
       /* if all is well, overwrite header in fname dataset */
       (void)write_hdr2_to_file(nhdr, fname); /* errors printed in function */
@@ -3605,8 +3619,12 @@ int act_swap_hdrs( nt_opts * opts )
             swap_nifti_header(nhdr, 0);  /* undo ANALYZE */
             swap_nifti_header(nhdr, 1);  /* swap NIFTI */
          } else if ( opts->swap_old ) {
-            /* undo whichever was done and apply the old way */
-            swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
+            /* undo whichever was done and apply the old way.  As above,
+               nhdr is a nifti_1_header, so it must not be swapped as a
+               540 byte NIFTI-2 header just because its magic says "n+2".
+               old_swap_nifti_header() takes a nifti_1_header and a
+               boolean, so it needs no such guard. */
+            swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr) ? 1 : 0);
             old_swap_nifti_header(nhdr, NIFTI_VERSION(*nhdr));
          }
 
@@ -3624,6 +3642,7 @@ int act_swap_hdrs( nt_opts * opts )
          if( !nim ) {
             fprintf(stderr,"** failed to dup file '%s' before modifying\n",
                     fname);
+            free(nhdr);
             return 1;
          }
          if( opts->keep_hist && nifti_add_extension(nim, opts->command,
@@ -3633,6 +3652,7 @@ int act_swap_hdrs( nt_opts * opts )
          {
             NTL_FERR(func,"failed to set prefix for new file: ",opts->prefix);
             nifti_image_free(nim);
+            free(nhdr);
             return 1;
          }
          dupname = nifti_strdup(nim->fname);  /* so we know to free it */
@@ -3641,6 +3661,8 @@ int act_swap_hdrs( nt_opts * opts )
          if( nifti_image_write_status(nim) ) {
             fprintf(stderr,"** failed to write image %s\n", nim->fname);
             nifti_image_free(nim);
+            free(dupname);
+            free(nhdr);
             return 1;
          }
 
