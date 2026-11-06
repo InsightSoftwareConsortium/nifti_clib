@@ -16,3 +16,12 @@ if(BUILD_SHARED_LIBS)
   target_compile_definitions(${NIFTI_FSLIOLIB_NAME} PRIVATE NIFTI_FSL_BUILD_SHARED)
   target_compile_definitions(${NIFTI_FSLIOLIB_NAME} INTERFACE NIFTI_FSL_USE_SHARED)
 endif()
+
+if(NIFTI_BUILD_TESTING)
+  add_executable(${NIFTI_PACKAGE_PREFIX}fslio_volsize_test fslio_volsize_test.c)
+  target_link_libraries(${NIFTI_PACKAGE_PREFIX}fslio_volsize_test PUBLIC ${NIFTI_FSLIOLIB_NAME})
+  add_test(
+    NAME fslio_volsize_64bit
+    COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}fslio_volsize_test>
+    )
+endif()
