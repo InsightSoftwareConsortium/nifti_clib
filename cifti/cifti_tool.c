@@ -175,6 +175,7 @@ int process(opts_t * opts)
 {
    nifti_image * nim = NULL;
    afni_xml_t  * ax;
+   int           rv = 0;
 
    if( !opts->fin ){ fprintf(stderr, "** missing option '-input'\n"); return 1;}
 
@@ -190,13 +191,13 @@ int process(opts_t * opts)
       return 1;
    }
 
-   if( opts->disp_cext ) disp_cifti_extension(nim, opts);
-   if( opts->eval_cext ) eval_cifti_extension(ax, opts);
+   if( opts->disp_cext ) rv |= disp_cifti_extension(nim, opts);
+   if( opts->eval_cext ) rv |= eval_cifti_extension(ax, opts);
 
    axml_free_xml_t(ax);
    nifti_image_free(nim);
 
-   return 0;
+   return rv ? 1 : 0;
 }
 
 int disp_cifti_extension(nifti_image * nim, opts_t * opts)
@@ -219,6 +220,7 @@ int disp_cifti_extension(nifti_image * nim, opts_t * opts)
       }
 
    fp = open_write_stream(opts->fout);
+   if( !fp ) return 1;
    if( !ext ) {
       fprintf(fp, "** no CIFTI extension in %s\n",nim->fname?nim->fname:"NULL");
       close_stream(fp);
@@ -242,6 +244,7 @@ int eval_cifti_extension(afni_xml_t * ax, opts_t * opts)
               opts->fout ? opts->fout : "DEFAULT" );
 
    fp = open_write_stream(opts->fout);
+   if( !fp ) return 1;
    axml_set_wstream(fp);
 
    if( opts->verb > 1 ) fprintf(stderr, "-- recursive eval from %s\n",
