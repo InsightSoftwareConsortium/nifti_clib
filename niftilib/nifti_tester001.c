@@ -459,16 +459,16 @@ int main (int argc, const char *argv[])
   /*
    * call nifti_datatype_string with all possible values
    */
-#define nifti_datatype_test(constant,string)                            \
-  {                                                                     \
-  char buf[64];                                                         \
-  snprintf(buf,sizeof(buf),"nifti_datatype_string %s",string);                       \
-  PrintTest(                                                   \
-            buf,                                                        \
-            strcmp(nifti_datatype_string(constant),string) != 0,        \
-            true,                                            \
-            &Errors);                                                   \
-  }
+#define nifti_datatype_test(constant,string)                     \
+  do {                                                           \
+  char buf[64];                                                  \
+  snprintf(buf,sizeof(buf),"nifti_datatype_string %s",string);   \
+  PrintTest(                                                     \
+            buf,                                                 \
+            strcmp(nifti_datatype_string(constant),string) != 0, \
+            true,                                                \
+            &Errors);                                            \
+  } while(0)
   nifti_datatype_test(DT_UNKNOWN,"UNKNOWN");
   nifti_datatype_test(DT_BINARY, "BINARY");
   nifti_datatype_test(DT_INT8, "INT8");
@@ -486,16 +486,16 @@ int main (int argc, const char *argv[])
   nifti_datatype_test(DT_COMPLEX128, "COMPLEX128");
   nifti_datatype_test(DT_COMPLEX256, "COMPLEX256");
   nifti_datatype_test(DT_RGB24, "RGB24");
-#define nifti_is_inttype_test(constant,rval)            \
-  {                                                     \
-  char buf[64];                                         \
-  snprintf(buf,sizeof(buf),"nifti_datatype_string %d",constant);     \
-  PrintTest(                                   \
-            buf,                                        \
-            nifti_is_inttype(constant) != (rval),       \
-            true,                            \
-            &Errors);                                   \
-  }
+#define nifti_is_inttype_test(constant,rval)                     \
+  do {                                                           \
+  char buf[64];                                                  \
+  snprintf(buf,sizeof(buf),"nifti_datatype_string %d",constant); \
+  PrintTest(                                                     \
+            buf,                                                 \
+            nifti_is_inttype(constant) != (rval),                \
+            true,                                                \
+            &Errors);                                            \
+  } while(0)
   nifti_is_inttype_test(DT_UNKNOWN,0);
   nifti_is_inttype_test(DT_BINARY,0);
   nifti_is_inttype_test(DT_INT8,1);
@@ -513,16 +513,16 @@ int main (int argc, const char *argv[])
   nifti_is_inttype_test(DT_COMPLEX128,0);
   nifti_is_inttype_test(DT_COMPLEX256,0);
   nifti_is_inttype_test(DT_RGB24,1);
-#define nifti_units_string_test(constant,string)                \
-  {                                                             \
-  char buf[64];                                                 \
-  snprintf(buf,sizeof(buf),"nifti_units_string_test %s",string);             \
-  PrintTest(                                           \
-            buf,                                                \
-            strcmp(nifti_units_string(constant),string) != 0,   \
-            true,                                    \
-            &Errors);                                           \
-  }
+#define nifti_units_string_test(constant,string)                 \
+  do {                                                           \
+  char buf[64];                                                  \
+  snprintf(buf,sizeof(buf),"nifti_units_string_test %s",string); \
+  PrintTest(                                                     \
+            buf,                                                 \
+            strcmp(nifti_units_string(constant),string) != 0,    \
+            true,                                                \
+            &Errors);                                            \
+  } while(0)
   nifti_units_string_test(NIFTI_UNITS_METER,"m");
   nifti_units_string_test(NIFTI_UNITS_MM,"mm");
   nifti_units_string_test(NIFTI_UNITS_MICRON,"um");
@@ -532,16 +532,16 @@ int main (int argc, const char *argv[])
   nifti_units_string_test(NIFTI_UNITS_HZ,"Hz");
   nifti_units_string_test(NIFTI_UNITS_PPM,"ppm");
   nifti_units_string_test(NIFTI_UNITS_RADS,"rad/s");
-#define nifti_intent_string_test(constant,string)               \
-  {                                                             \
-  char buf[64];                                                 \
-  snprintf(buf,sizeof(buf),"nifti_intent_string %s",string);                 \
-  PrintTest(                                           \
-            buf,                                                \
-            strcmp(nifti_intent_string(constant),string) != 0,  \
-            true,                                    \
-            &Errors);                                           \
-  }
+#define nifti_intent_string_test(constant,string)              \
+  do {                                                         \
+  char buf[64];                                                \
+  snprintf(buf,sizeof(buf),"nifti_intent_string %s",string);   \
+  PrintTest(                                                   \
+            buf,                                               \
+            strcmp(nifti_intent_string(constant),string) != 0, \
+            true,                                              \
+            &Errors);                                          \
+  } while(0)
   nifti_intent_string_test(NIFTI_INTENT_CORREL,"Correlation statistic");
   nifti_intent_string_test(NIFTI_INTENT_TTEST,"T-statistic");
   nifti_intent_string_test(NIFTI_INTENT_FTEST,"F-statistic");
@@ -578,32 +578,32 @@ int main (int argc, const char *argv[])
   nifti_intent_string_test(NIFTI_INTENT_DIMLESS,"Dimensionless number");
   nifti_intent_string_test(-200,"Unknown");
 
-#define nifti_slice_string_test(constant,string)                \
-  {                                                             \
-  char buf[64];                                                 \
-  snprintf(buf,sizeof(buf),"nifti_slice_string_test %s",string);             \
-  PrintTest(                                           \
-            buf,                                                \
-            strcmp(nifti_slice_string(constant),string) != 0,   \
-            true,                                    \
-            &Errors);                                           \
-  }
+#define nifti_slice_string_test(constant,string)                 \
+  do {                                                           \
+  char buf[64];                                                  \
+  snprintf(buf,sizeof(buf),"nifti_slice_string_test %s",string); \
+  PrintTest(                                                     \
+            buf,                                                 \
+            strcmp(nifti_slice_string(constant),string) != 0,    \
+            true,                                                \
+            &Errors);                                            \
+  } while(0)
   nifti_slice_string_test(NIFTI_SLICE_SEQ_INC,"sequential_increasing");
   nifti_slice_string_test(NIFTI_SLICE_SEQ_DEC,"sequential_decreasing");
   nifti_slice_string_test(NIFTI_SLICE_ALT_INC,"alternating_increasing");
   nifti_slice_string_test(NIFTI_SLICE_ALT_DEC,"alternating_decreasing");
   nifti_slice_string_test(NIFTI_SLICE_ALT_INC2,"alternating_increasing_2");
   nifti_slice_string_test(NIFTI_SLICE_ALT_DEC2,"alternating_decreasing_2");
-#define nifti_orientation_string_test(constant,string)                  \
-  {                                                                     \
-  char buf[64];                                                         \
-  snprintf(buf,sizeof(buf),"nifti_orientation_string_test %s",string);               \
-  PrintTest(                                                   \
-            buf,                                                        \
-            strcmp(nifti_orientation_string(constant),string) != 0,     \
-            true,                                            \
-            &Errors);                                                   \
-  }
+#define nifti_orientation_string_test(constant,string)                 \
+  do {                                                                 \
+  char buf[64];                                                        \
+  snprintf(buf,sizeof(buf),"nifti_orientation_string_test %s",string); \
+  PrintTest(                                                           \
+            buf,                                                       \
+            strcmp(nifti_orientation_string(constant),string) != 0,    \
+            true,                                                      \
+            &Errors);                                                  \
+  } while(0)
   nifti_orientation_string_test(NIFTI_L2R,"Left-to-Right");
   nifti_orientation_string_test(NIFTI_R2L,"Right-to-Left");
   nifti_orientation_string_test(NIFTI_P2A,"Posterior-to-Anterior");
@@ -611,19 +611,19 @@ int main (int argc, const char *argv[])
   nifti_orientation_string_test(NIFTI_I2S,"Inferior-to-Superior");
   nifti_orientation_string_test(NIFTI_S2I,"Superior-to-Inferior");
 
-#define nifti_datatype_sizes_test(constant,Nbyper,Swapsize)     \
-  {                                                             \
-  int nbyper;                                                   \
-  int swapsize;                                                 \
-  char buf[64];                                                 \
-  snprintf(buf,sizeof(buf),"nifti_datatype_sizes_test %d",constant);         \
-  nifti_datatype_sizes(constant,&nbyper,&swapsize);             \
-  PrintTest(                                           \
-            buf,                                                \
-            nbyper != (Nbyper) || swapsize != (Swapsize),           \
-            true,                                    \
-            &Errors);                                           \
-  }
+#define nifti_datatype_sizes_test(constant,Nbyper,Swapsize)          \
+  do {                                                               \
+  int nbyper;                                                        \
+  int swapsize;                                                      \
+  char buf[64];                                                      \
+  snprintf(buf,sizeof(buf),"nifti_datatype_sizes_test %d",constant); \
+  nifti_datatype_sizes(constant,&nbyper,&swapsize);                  \
+  PrintTest(                                                         \
+            buf,                                                     \
+            nbyper != (Nbyper) || swapsize != (Swapsize),            \
+            true,                                                    \
+            &Errors);                                                \
+  } while(0)
 
   nifti_datatype_sizes_test(DT_UINT8,1,0);
   nifti_datatype_sizes_test(DT_UINT16,2,2);
