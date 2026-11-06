@@ -6152,6 +6152,7 @@ nifti_image * nifti_read_ascii_image(znzFile fp, const char *fname, int flen,
    nifti_image * nim;
    int64_t       slen;
    int           txt_size, remain, rv = 0;
+   int64_t       vsize;
    char        * sbuf, lfunc[25] = { "nifti_read_ascii_image" };
 
    if( nifti_is_gzfile(fname) ){
@@ -6186,7 +6187,10 @@ nifti_image * nifti_read_ascii_image(znzFile fp, const char *fname, int flen,
    nim->nifti_type = NIFTI_FTYPE_ASCII ;
 
    /* compute remaining space for extensions */
-   remain = flen - txt_size - (int)nifti_get_volsize(nim);
+   vsize  = nifti_get_volsize(nim);
+   remain = 0;
+   if( flen > txt_size && vsize < (int64_t)flen - txt_size )
+      remain = flen - txt_size - (int)vsize;
    if( remain > 4 ){
       /* read extensions (reposition file pointer, first) */
       znzseek(fp, txt_size, SEEK_SET);
@@ -8934,8 +8938,20 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
    nim->dim[6] = nim->nv ; nim->pixdim[6] = nim->dv ;
    nim->dim[7] = nim->nw ; nim->pixdim[7] = nim->dw ;
 
-   nim->nvox = (int64_t)nim->nx * nim->ny * nim->nz
-                      * nim->nt * nim->nu * nim->nv * nim->nw ;
+   for( ii=1, nim->nvox=1; ii <= 7; ii++ ){
+      if( nim->dim[ii] <= 0 || nim->nvox > INT64_MAX / nim->dim[ii] ){
+         if( g_opts.debug > 0 )
+            fprintf(stderr,"** NIFA: dim[] is not positive or overflows the voxel count\n");
+         nifti_image_free(nim); return NULL;
+      }
+      nim->nvox *= nim->dim[ii];
+   }
+   if( nim->nvox > INT64_MAX / nim->nbyper ||
+       (uint64_t)nim->nvox > SIZE_MAX / (size_t)nim->nbyper ){
+      if( g_opts.debug > 0 )
+         fprintf(stderr,"** NIFA: dim[] and datatype overflow the volume size\n");
+      nifti_image_free(nim); return NULL;
+   }
 
    if( nim->qform_code > 0 )
      nim->qto_xyz = nifti_quatern_to_dmat44(
