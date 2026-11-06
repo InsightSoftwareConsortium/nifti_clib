@@ -5495,8 +5495,13 @@ nifti_2_header * nifti_read_n2_hdr(const char * hname, int * swapped,
       if( ! nim ) return NULL;
 
       hptr = (nifti_2_header *)malloc(sizeof(nifti_2_header));
+      if( ! hptr ){
+         fprintf(stderr,"** nifti_read_n2_hdr: failed to alloc nifti_2_header\n");
+         nifti_image_free(nim);
+         return NULL;
+      }
       rv = nifti_convert_nim2n2hdr(nim, hptr);
-      free(nim);
+      nifti_image_free(nim);   /* free(nim) leaked nim's filename strings */
 
       if( rv ) { free(hptr); return NULL; }
       return hptr;
@@ -7907,7 +7912,7 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 
 #ifdef PIGZ
 #ifdef HAVE_ZLIB
-int doPigz2(nifti_image *nim, struct nifti_2_header nhdr, const nifti_brick_list * NBL) {
+static int doPigz2(nifti_image *nim, struct nifti_2_header nhdr, const nifti_brick_list * NBL) {
 	FILE *pigzPipe;
 	char command[768];
     strcpy(command, "pigz" );
@@ -7939,7 +7944,7 @@ int doPigz2(nifti_image *nim, struct nifti_2_header nhdr, const nifti_brick_list
 	return 0;
 }
 
-int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
+static int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
 	FILE *pigzPipe;
 	char command[768];
     strcpy(command, "pigz" );
