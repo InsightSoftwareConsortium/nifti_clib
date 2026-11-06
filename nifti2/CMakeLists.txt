@@ -99,6 +99,14 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   #add_test( NAME ${TEST_PREFIX}_tool_rm_ext /bin/sh ${NIFTI_SOURCE_DIR}/niftilib/rmthenrun rm_ext.nii COMMAND $<TARGET_FILE:${TOOL_NAME}> -rm_ext ALL -prefix rm_ext.nii -infile ${CMAKE_CURRENT_BINARY_DIR}/zn1.nii.gz )
   add_test( NAME ${TEST_PREFIX}_tool_check_hdr COMMAND $<TARGET_FILE:${TOOL_NAME}> -check_hdr -infile ${CMAKE_CURRENT_BINARY_DIR}/za2 )
   add_test( NAME ${TEST_PREFIX}_tool_check_nim COMMAND $<TARGET_FILE:${TOOL_NAME}> -check_nim -infile ${CMAKE_CURRENT_BINARY_DIR}/za2 )
+
+  if(FSLSTYLE_NAME_CONFLICTS)
+    add_test( NAME ${TEST_PREFIX}_ambiguous_hdrname
+              COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:${TOOL_NAME}>
+                      -DDIR=${CMAKE_CURRENT_BINARY_DIR}/ambig
+                      -P ${PROJECT_SOURCE_DIR}/cmake/test_ambiguous_hdrname.cmake )
+  endif()
+
   set_tests_properties(${TEST_PREFIX}_tool_check_hdr PROPERTIES LABELS NEEDS_DATA)
   set_tests_properties(${TEST_PREFIX}_tool_check_nim PROPERTIES LABELS NEEDS_DATA)
 
