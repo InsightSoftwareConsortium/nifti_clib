@@ -414,6 +414,9 @@ static const nifti_type_ele nifti_type_list[] = {
 };
 
 /*---------------------------------------------------------------------------*/
+/* also defined in libnifti2; both export it */
+int nifti_fileexists(const char* fname);
+
 /* prototypes for internal functions - not part of exported library          */
 
 /* extension routines */
@@ -5776,39 +5779,7 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 
 #ifdef PIGZ
 #ifdef HAVE_ZLIB
-int doPigz2(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
-	FILE *pigzPipe;
-	char command[768];
-    strcpy(command, "pigz" );
-    strcat(command, " -n -f > \"");
-    strcat(command, nim->fname);
-    strcat(command, "\"");
-	#ifdef _MSC_VER
-	if (( pigzPipe = _popen(command, "w")) == NULL)
-		return -1;
-	#else
-	if (( pigzPipe = popen(command, "w")) == NULL)
-		return -1;
-	#endif
-	znzFile fp;
-	fp = (znzFile) calloc(1,sizeof(struct znzptr));
-	fp->zfptr = NULL;
-	fp->withz = 0;
-    fp->nzfptr = pigzPipe;
-	fwrite(&nhdr, sizeof(nhdr), 1, pigzPipe);
-	if( nim->nifti_type != NIFTI_FTYPE_ANALYZE )
-    nifti_write_extensions(fp,nim);
-	nifti_write_all_data(fp,nim,NBL);
-	#ifdef _MSC_VER
-	_pclose(pigzPipe);
-	#else
-	pclose(pigzPipe);
-	#endif
-	free(fp);
-	return 0;
-}
-
-int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
+static int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
 	FILE *pigzPipe;
 	char command[768];
     strcpy(command, "pigz" );
