@@ -21,8 +21,9 @@ function(set_from_env var env_var)
   endif()
 endfunction()
 
-set_from_env(CTEST_SITE "TRAVIS_APP_HOST" REQUIRED)
-set(CTEST_SITE "travis.${CTEST_SITE}")
+# RUNNER_OS is set by GitHub Actions ("Linux", "macOS", "Windows").
+set_from_env(CTEST_SITE "RUNNER_OS" DEFAULT "unknown")
+set(CTEST_SITE "github.${CTEST_SITE}")
 set(CTEST_UPDATE_VERSION_ONLY 1)
 
 # https://gitlab.kitware.com/cmake/community/wikis/doc/ctest/Scripting-Of-CTest
@@ -51,15 +52,15 @@ set_from_env(dashboard_do_coverage "WITH_COVERAGE" DEFAULT "OFF")
 set_from_env(dashboard_do_memcheck "WITH_MEMCHECK" DEFAULT "OFF")
 
 if(NOT CTEST_BUILD_NAME)
-  if(DEFINED ENV{SYSTEM_PULLREQUEST_SOURCEBRANCH})
+  if(NOT "$ENV{SYSTEM_PULLREQUEST_SOURCEBRANCH}" STREQUAL "")
     set(branch "-$ENV{SYSTEM_PULLREQUEST_SOURCEBRANCH}")
     set(dashboard_git_branch "$ENV{SYSTEM_PULLREQUEST_SOURCEBRANCH}")
     set(dashboard_model "Experimental")
-  elseif(ENV{BUILD_SOURCEBRANCHNAME} STREQUAL "master")
+  elseif("$ENV{BUILD_SOURCEBRANCHNAME}" STREQUAL "master")
     set(branch "-master")
     set(dashboard_git_branch "$ENV{BUILD_SOURCEBRANCHNAME}")
     set(dashboard_model "Continuous")
-  elseif(ENV{BUILD_SOURCEBRANCHNAME} STREQUAL "nightly-master")
+  elseif("$ENV{BUILD_SOURCEBRANCHNAME}" STREQUAL "nightly-master")
     set(branch "-nightly-master")
     set(dashboard_git_branch "$ENV{BUILD_SOURCEBRANCHNAME}")
     set(dashboard_model "Nightly")
@@ -69,14 +70,14 @@ if(NOT CTEST_BUILD_NAME)
     set(dashboard_model "Experimental")
   endif()
 
-  if(DEFINED ENV{SYSTEM_PULLREQUEST_PULLREQUESTNUMBER})
+  if(NOT "$ENV{SYSTEM_PULLREQUEST_PULLREQUESTNUMBER}" STREQUAL "")
     set(pr "-PR$ENV{SYSTEM_PULLREQUEST_PULLREQUESTNUMBER}")
   else()
     set(pr "")
   endif()
 
   set(CTEST_BUILD_NAME
-    "$ENV{BLDPREFIX}_$ENV{TRAVIS_OS_NAME}-$ENV{BUILD_BUILDID}_${pr}_${branch}")
+    "$ENV{BLDPREFIX}_$ENV{RUNNER_OS}-$ENV{BUILD_BUILDID}${pr}${branch}")
 endif()
 
 set(dashboard_cache "
