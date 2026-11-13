@@ -1280,6 +1280,7 @@ int nifti_disp_matrix_orient( const char * mesg, nifti_dmat44 mat )
  *
  * \return allocated pointer (or NULL on failure)
 *//*--------------------------------------------------------------------*/
+NIO_RETURNS_MALLOCED
 char *nifti_strdup(const char *str)
 {
   if( !str ) return NULL;       /* allow calls passing NULL */
@@ -3604,6 +3605,7 @@ int nifti_compiled_with_zlib(void)
 
     This allocates memory for basename which should eventually be freed.
 *//*--------------------------------------------------------------------*/
+NIO_RETURNS_MALLOCED
 char * nifti_makebasename(const char* fname)
 {
    char *basename;
@@ -3700,6 +3702,7 @@ void nifti_set_fix_floats( int fix )
     NB: it allocates memory for hdrname which should be freed
         when no longer required
 *//*-------------------------------------------------------------------*/
+NIO_RETURNS_MALLOCED
 char * nifti_findhdrname(const char* fname)
 {
    char *basename, *hdrname;
@@ -3815,6 +3818,7 @@ char * nifti_findhdrname(const char* fname)
     NB: it allocates memory for the image filename, which should be freed
         when no longer required
 *//*---------------------------------------------------------------------*/
+NIO_RETURNS_MALLOCED
 char * nifti_findimgname(const char* fname , int nifti_type)
 {
    /* store all extensions as strings, in case we need to go uppercase */
@@ -3901,6 +3905,7 @@ char * nifti_findimgname(const char* fname , int nifti_type)
 
    \sa nifti_set_filenames
 *//*-------------------------------------------------------------------*/
+NIO_RETURNS_MALLOCED
 char * nifti_makehdrname(const char * prefix, int nifti_type, int check,
                          int comp)
 {
@@ -3976,6 +3981,7 @@ char * nifti_makehdrname(const char * prefix, int nifti_type, int check,
 
    \sa nifti_set_filenames
 *//*-------------------------------------------------------------------*/
+NIO_RETURNS_MALLOCED
 char * nifti_makeimgname(const char * prefix, int nifti_type, int check,
                          int comp)
 {
@@ -8392,6 +8398,7 @@ static int unescape_string( char *str )
    The result should be free()-ed when you are done with it.
 --------------------------------------------------------------------------*/
 
+NIO_RETURNS_MALLOCED
 static char *escapize_string( const char * str )
 {
    int ii,jj , lstr,lout ;
@@ -8453,8 +8460,9 @@ static char *escapize_string( const char * str )
    that can later be converted back into a NIFTI header in
    nifti_image_from_ascii().
 
-   The resulting string can be free()-ed when you are done with it.
+   The resulting string should be free()-ed when you are done with it.
 *//*-------------------------------------------------------------------------*/
+NIO_RETURNS_MALLOCED
 char *nifti_image_to_ascii( const nifti_image *nim )
 {
    char *buf , *ebuf , *newbuf; int nbuf ;
