@@ -145,12 +145,22 @@ ZNZ_API int znzputs(const char *str, znzFile file);
 #ifdef COMPILE_NIFTIUNUSED_CODE
 ZNZ_API char * znzgets(char* str, int size, znzFile file);
 
+ZNZ_API int znzflush(znzFile file);
+
+ZNZ_API int znzeof(znzFile file);
+
 ZNZ_API int znzputc(int c, znzFile file);
 
 ZNZ_API int znzgetc(znzFile file);
 
 #if !defined(WIN32)
-ZNZ_API int znzprintf(znzFile stream, const char *format, ...);
+/* checks callers' formats, so the inner vsnprintf passes -Wformat-nonliteral */
+#if defined(__GNUC__) || defined(__clang__)
+#define ZNZ_PRINTF_ATTR __attribute__((format(printf, 2, 3)))
+#else
+#define ZNZ_PRINTF_ATTR
+#endif
+ZNZ_API int znzprintf(znzFile stream, const char *format, ...) ZNZ_PRINTF_ATTR;
 #endif
 #endif
 
