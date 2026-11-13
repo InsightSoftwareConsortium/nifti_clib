@@ -112,6 +112,13 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_check_hdr COMMAND $<TARGET_FILE:${TOOL_NAME}> -check_hdr -infile ${CMAKE_CURRENT_BINARY_DIR}/za2 )
   add_test( NAME ${TEST_PREFIX}_tool_check_nim COMMAND $<TARGET_FILE:${TOOL_NAME}> -check_nim -infile ${CMAKE_CURRENT_BINARY_DIR}/za2 )
 
+  if(FSLSTYLE_NAME_CONFLICTS)
+    add_test( NAME ${TEST_PREFIX}_ambiguous_hdrname
+              COMMAND ${CMAKE_COMMAND} -DTOOL=$<TARGET_FILE:${TOOL_NAME}>
+                      -DDIR=${CMAKE_CURRENT_BINARY_DIR}/ambig1
+                      -P ${PROJECT_SOURCE_DIR}/cmake/test_ambiguous_hdrname.cmake )
+  endif()
+
   #add_test( NAME ${TEST_PREFIX}_tool_copy_collapsed_image /bin/sh ${NIFTI_SOURCE_DIR}/niftilib/rmthenrun cci_zn1.nii COMMAND $<TARGET_FILE:${TOOL_NAME}> -cci 2 2 2 -1 -1 -1 -1 -prefix cci_zn1.nii -infile ${CMAKE_CURRENT_BINARY_DIR}/zn1.nii.gz )
 
   add_test( NAME cleanup_n1  COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_BINARY_DIR}/n1.nii.gz  ${CMAKE_CURRENT_BINARY_DIR}/n1.nii )
