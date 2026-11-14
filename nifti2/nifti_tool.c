@@ -3860,16 +3860,6 @@ int modify_field(void * basep, size_t baselen, field_s * field, const char * dat
       return 1;
    }
 
-   /* every case below writes field->len elements at field->offset */
-   if( field->offset < 0 || field->size < 0 || field->len < 0 ||
-       (size_t)field->offset + (size_t)field->size * (size_t)field->len > baselen )
-   {
-      fprintf(stderr,"** field '%s' (offset %d, %d x %d bytes) does not fit "
-                     "in a %zu byte structure\n",
-              field->name, field->offset, field->len, field->size, baselen);
-      return 1;
-   }
-
    switch( field->type )
    {
          case DT_UNKNOWN:
