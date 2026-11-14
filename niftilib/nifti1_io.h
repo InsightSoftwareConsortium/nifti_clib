@@ -44,8 +44,8 @@
 #endif
 
 #if defined(__clang__)
-#define NIO_RETURNS_MALLOCED __attribute((ownership_returns(malloc)))
-#elif defined(__GNUC__)
+#define NIO_RETURNS_MALLOCED __attribute__((ownership_returns(malloc)))
+#elif defined(__GNUC__) && __GNUC__ >= 11
 #define NIO_RETURNS_MALLOCED __attribute__((malloc (free)))
 #else
 #define NIO_RETURNS_MALLOCED
