@@ -176,6 +176,23 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_reject_ndim_range_nia COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/nia_ndim_range.nia )
   set_tests_properties( ${TEST_PREFIX}_tool_reject_ndim_range_nia PROPERTIES PASS_REGULAR_EXPRESSION "ndim is not in \\[1,7\\]" )
 
+  # A 32-bit size_t overflows the voxel count first, so these volumes are
+  # refused before the volume-size and extension checks.
+  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow PROPERTIES
+                          PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size|dim\\[\\] overflows the voxel count" )
+    set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow_nia PROPERTIES
+                          PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size|dim\\[\\] is not positive or overflows the voxel count" )
+    set_tests_properties( ${TEST_PREFIX}_tool_nia_volsize_no_exts PROPERTIES
+                          PASS_REGULAR_EXPRESSION "num_ext = 0|dim\\[\\] is not positive or overflows the voxel count" )
+  endif()
+  # A pass regex ignores the exit code, so sanitizer output must fail these explicitly.
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow ${TEST_PREFIX}_tool_reject_volsize_overflow
+                        ${TEST_PREFIX}_tool_reject_nvox_overflow_nia ${TEST_PREFIX}_tool_reject_zero_dim_nia
+                        ${TEST_PREFIX}_tool_reject_volsize_overflow_nia ${TEST_PREFIX}_tool_nia_volsize_no_exts
+                        ${TEST_PREFIX}_tool_reject_ndim_range_nia
+                        PROPERTIES FAIL_REGULAR_EXPRESSION "runtime error|Sanitizer|leaked in" )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)

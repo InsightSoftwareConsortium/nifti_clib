@@ -219,6 +219,19 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_reject_ndim_range_nia COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/nia_ndim_range.nia )
   set_tests_properties( ${TEST_PREFIX}_tool_reject_ndim_range_nia PROPERTIES PASS_REGULAR_EXPRESSION "ndim is not in \\[1,7\\]" )
 
+  # A 32-bit size_t refuses this volume before the extension check.
+  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set_tests_properties( ${TEST_PREFIX}_tool_nia_volsize_no_exts PROPERTIES
+                          PASS_REGULAR_EXPRESSION "num_ext = 0|dim\\[\\] and datatype overflow the volume size" )
+  endif()
+  # A pass regex ignores the exit code, so sanitizer output must fail these explicitly.
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 ${TEST_PREFIX}_tool_reject_nvox_overflow_n2
+                        ${TEST_PREFIX}_tool_reject_volsize_overflow ${TEST_PREFIX}_tool_reject_volsize_overflow_n2
+                        ${TEST_PREFIX}_tool_reject_nvox_overflow_nia ${TEST_PREFIX}_tool_reject_zero_dim_nia
+                        ${TEST_PREFIX}_tool_reject_volsize_overflow_nia ${TEST_PREFIX}_tool_nia_volsize_no_exts
+                        ${TEST_PREFIX}_tool_reject_ndim_range_nia
+                        PROPERTIES FAIL_REGULAR_EXPRESSION "runtime error|Sanitizer|leaked in" )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)
