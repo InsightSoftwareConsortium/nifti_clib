@@ -173,6 +173,8 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow_nia
                         PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
   set_tests_properties( ${TEST_PREFIX}_tool_nia_volsize_no_exts PROPERTIES PASS_REGULAR_EXPRESSION "num_ext = 0" )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_ndim_range_nia COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/nia_ndim_range.nia )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_ndim_range_nia PROPERTIES PASS_REGULAR_EXPRESSION "ndim is not in \\[1,7\\]" )
 
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)

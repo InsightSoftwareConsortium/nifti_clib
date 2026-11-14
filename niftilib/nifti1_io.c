@@ -6805,7 +6805,11 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
 
    /* do miscellaneous checking and cleanup */
 
-   if( nim->ndim <= 0 ){ nifti_image_free(nim); return NULL; } /* bad! */
+   if( nim->ndim <= 0 || nim->ndim > 7 ){
+      if( g_opts.debug > 0 )
+         fprintf(stderr,"** NIFA: ndim is not in [1,7]\n");
+      nifti_image_free(nim); return NULL;
+   }
 
    nifti_datatype_sizes( nim->datatype, &(nim->nbyper), &(nim->swapsize) );
    if( nim->nbyper == 0 ){ nifti_image_free(nim); return NULL; } /* bad! */
