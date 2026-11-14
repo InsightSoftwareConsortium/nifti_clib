@@ -96,6 +96,10 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_diff_nims        COMMAND $<TARGET_FILE:${TOOL_NAME}> -diff_nim -infile ${CMAKE_CURRENT_BINARY_DIR}/zn1 ${CMAKE_CURRENT_BINARY_DIR}/zn1 )
 
   add_test( NAME ${TEST_PREFIX}_tool_copy_brick_list COMMAND $<TARGET_FILE:${TOOL_NAME}> -cbl -prefix cbl_zn1.nii -infile ${CMAKE_CURRENT_BINARY_DIR}/zn1.nii.gz[0,1])
+  add_test( NAME ${TEST_PREFIX}_tool_cbl_missing_input COMMAND $<TARGET_FILE:${TOOL_NAME}> -cbl -prefix cbl_missing.nii -infile ${CMAKE_CURRENT_BINARY_DIR}/no_such_input.nii[0])
+  set_tests_properties(${TEST_PREFIX}_tool_cbl_missing_input PROPERTIES
+    PASS_REGULAR_EXPRESSION "failed to find header file"
+    FAIL_REGULAR_EXPRESSION "LeakSanitizer|leaked in")
   add_test( NAME ${TEST_PREFIX}_tool_disp_ci         COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_ci 2 2 2 -1 0 0 0  -infile ${CMAKE_CURRENT_BINARY_DIR}/zn1.nii.gz )
 
   add_test( NAME ${TEST_PREFIX}_tool_disp_ts         COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_ts 2 2 2 -infile ${CMAKE_CURRENT_BINARY_DIR}/zn1.nii.gz )
