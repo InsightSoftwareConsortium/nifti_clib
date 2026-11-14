@@ -4030,7 +4030,7 @@ int act_cbl( nt_opts * opts )
       fprintf(stderr,"+d -cbl: using '%s' for selection string\n", selstr);
 
    nim = nt_image_read(opts, fname, 0);  /* get image */
-   if( !nim ) return 1;
+   if( !nim ){  free(fname);  free(selstr);  return 1; }
 
    /* since nt can be zero now (sigh), check for it   02 Mar 2006 [rickr] */
    blist = nifti_get_intlist(nim->nt > 0 ? num_volumes(nim) : 1, selstr);

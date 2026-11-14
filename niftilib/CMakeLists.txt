@@ -96,6 +96,9 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_test( NAME ${TEST_PREFIX}_tool_ascii_dup_attr COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/dup_attr.nia )
   set_tests_properties( ${TEST_PREFIX}_tool_ascii_dup_attr PROPERTIES PASS_REGULAR_EXPRESSION "dup2.nia"
                         FAIL_REGULAR_EXPRESSION "LeakSanitizer|leaked in" )
+  add_test( NAME ${TEST_PREFIX}_tool_cbl_missing_input COMMAND $<TARGET_FILE:${TOOL_NAME}> -cbl -prefix cbl_missing.nii -infile ${CMAKE_CURRENT_BINARY_DIR}/no_such_input.nii[0] )
+  set_tests_properties( ${TEST_PREFIX}_tool_cbl_missing_input PROPERTIES PASS_REGULAR_EXPRESSION "failed to find header file"
+                        FAIL_REGULAR_EXPRESSION "LeakSanitizer|leaked in" )
 
   #The help screens always return 1; add_test( NAME ${NIFTI_PACKAGE_PREFIX}nifti1_tool1_help COMMAND $<TARGET_FILE:${TOOL_NAME}>)
   add_test( NAME ${TEST_PREFIX}_tool_n1  COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_hdr -infile ${CMAKE_CURRENT_BINARY_DIR}/n1 )

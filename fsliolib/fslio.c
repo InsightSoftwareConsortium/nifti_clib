@@ -591,6 +591,7 @@ int check_for_multiple_filenames(const char* filename)
       strcpy(tmpname,basename);
       strcat(tmpname,".hdr.gz");
       if (fsl_fileexists(tmpname)) { fprintf(stderr,"%s ",tmpname); }
+      free(basename);
       fprintf(stderr,"\n\n");
 
       if (!FslIgnoreMFQ) {
