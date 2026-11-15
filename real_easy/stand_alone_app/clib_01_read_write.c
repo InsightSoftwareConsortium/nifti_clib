@@ -17,7 +17,7 @@
  */
 #include <stdio.h>
 
-#include <nifti1_io.h>
+#include "nifti1_io.h"
 
 int show_help( void )
 {

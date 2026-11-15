@@ -16,7 +16,7 @@
  */
 #include <stdio.h>
 
-#include <nifti2_io.h>
+#include "nifti2_io.h"
 int disp_float(nifti_image * nim, int vol, int slice, int line, int offset);
 
 static int show_help( void )
