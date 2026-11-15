@@ -203,6 +203,43 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
       endif()
   endif()
 
+  # Dimensions whose product overflows the voxel count are refused.
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/n1_overflow.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n2_overflow.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_volsize_overflow COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/n1_volsize.nii )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_volsize_overflow_n2 COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${CMAKE_CURRENT_LIST_DIR}/testdata/n2_volsize.nii )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 ${TEST_PREFIX}_tool_reject_nvox_overflow_n2
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] overflows the voxel count" )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow ${TEST_PREFIX}_tool_reject_volsize_overflow_n2
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
+
+  # An ASCII header is refused the same way, and a volume that does not fit
+  # in the file is not read as extensions.
+  add_test( NAME ${TEST_PREFIX}_tool_reject_nvox_overflow_nia COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/nia_overflow.nia )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_zero_dim_nia COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/nia_zero_dim.nia )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_volsize_overflow_nia COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/nia_volsize.nia )
+  add_test( NAME ${TEST_PREFIX}_tool_nia_volsize_no_exts COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_exts -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/nia_volsize_trunc.nia )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow_nia ${TEST_PREFIX}_tool_reject_zero_dim_nia
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] is not positive or overflows the voxel count" )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_volsize_overflow_nia
+                        PROPERTIES PASS_REGULAR_EXPRESSION "dim\\[\\] and datatype overflow the volume size" )
+  set_tests_properties( ${TEST_PREFIX}_tool_nia_volsize_no_exts PROPERTIES PASS_REGULAR_EXPRESSION "num_ext = 0" )
+  add_test( NAME ${TEST_PREFIX}_tool_reject_ndim_range_nia COMMAND $<TARGET_FILE:${TOOL_NAME}> -disp_nim -infiles ${PROJECT_SOURCE_DIR}/niftilib/testdata/nia_ndim_range.nia )
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_ndim_range_nia PROPERTIES PASS_REGULAR_EXPRESSION "ndim is not in \\[1,7\\]" )
+
+  # A 32-bit size_t refuses this volume before the extension check.
+  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set_tests_properties( ${TEST_PREFIX}_tool_nia_volsize_no_exts PROPERTIES
+                          PASS_REGULAR_EXPRESSION "num_ext = 0|dim\\[\\] and datatype overflow the volume size" )
+  endif()
+  # A pass regex ignores the exit code, so sanitizer output must fail these explicitly.
+  set_tests_properties( ${TEST_PREFIX}_tool_reject_nvox_overflow_n1 ${TEST_PREFIX}_tool_reject_nvox_overflow_n2
+                        ${TEST_PREFIX}_tool_reject_volsize_overflow ${TEST_PREFIX}_tool_reject_volsize_overflow_n2
+                        ${TEST_PREFIX}_tool_reject_nvox_overflow_nia ${TEST_PREFIX}_tool_reject_zero_dim_nia
+                        ${TEST_PREFIX}_tool_reject_volsize_overflow_nia ${TEST_PREFIX}_tool_nia_volsize_no_exts
+                        ${TEST_PREFIX}_tool_reject_ndim_range_nia
+                        PROPERTIES FAIL_REGULAR_EXPRESSION "runtime error|Sanitizer|leaked in" )
+
   unset(TEST_SUFFIX)
   unset(TEST_PREFIX)
   unset(TOOL_NAME)

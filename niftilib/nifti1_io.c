@@ -3772,8 +3772,13 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
   nim->nv   = nim->dim[6] = nhdr.dim[6];
   nim->nw   = nim->dim[7] = nhdr.dim[7];
 
-  for( ii=1, nim->nvox=1; ii <= nhdr.dim[0]; ii++ )
+  /* the product becomes an allocation size, so refuse it rather than wrap */
+  for( ii=1, nim->nvox=1; ii <= nhdr.dim[0]; ii++ ){
+     if( nhdr.dim[ii] > 0 && nim->nvox > SIZE_MAX / (size_t)nhdr.dim[ii] ){
+        free(nim); ERREX("dim[] overflows the voxel count");
+     }
      nim->nvox *= nhdr.dim[ii];
+  }
 
   /**- set the type of data in voxels and how many bytes per voxel */
 
@@ -3781,6 +3786,11 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr,
 
   nifti_datatype_sizes( nim->datatype , &(nim->nbyper) , &(nim->swapsize) ) ;
   if( nim->nbyper == 0 ){ free(nim); ERREX("bad datatype"); }
+
+  /* nifti_get_volsize() multiplies these two */
+  if( nim->nvox > SIZE_MAX / (size_t)nim->nbyper ){
+     free(nim); ERREX("dim[] and datatype overflow the volume size");
+  }
 
   /**- set the grid spacings */
 
@@ -4383,6 +4393,7 @@ nifti_image * nifti_read_ascii_image(znzFile fp, char *fname, int flen,
 {
    nifti_image * nim;
    int           slen, txt_size, remain, rv = 0;
+   size_t        vsize;
    char        * sbuf, lfunc[25] = { "nifti_read_ascii_image" };
 
    if( nifti_is_gzfile(fname) ){
@@ -4416,7 +4427,10 @@ nifti_image * nifti_read_ascii_image(znzFile fp, char *fname, int flen,
    nim->nifti_type = NIFTI_FTYPE_ASCII ;
 
    /* compute remaining space for extensions */
-   remain = flen - txt_size - (int)nifti_get_volsize(nim);
+   vsize  = nifti_get_volsize(nim);
+   remain = 0;
+   if( flen > txt_size && vsize < (size_t)(flen - txt_size) )
+      remain = flen - txt_size - (int)vsize;
    if( remain > 4 ){
       /* read extensions (reposition file pointer, first) */
       znzseek(fp, txt_size, SEEK_SET);
@@ -6798,7 +6812,11 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
 
    /* do miscellaneous checking and cleanup */
 
-   if( nim->ndim <= 0 ){ nifti_image_free(nim); return NULL; } /* bad! */
+   if( nim->ndim <= 0 || nim->ndim > 7 ){
+      if( g_opts.debug > 0 )
+         fprintf(stderr,"** NIFA: ndim is not in [1,7]\n");
+      nifti_image_free(nim); return NULL;
+   }
 
    nifti_datatype_sizes( nim->datatype, &(nim->nbyper), &(nim->swapsize) );
    if( nim->nbyper == 0 ){ nifti_image_free(nim); return NULL; } /* bad! */
@@ -6812,8 +6830,19 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
    nim->dim[6] = nim->nv ; nim->pixdim[6] = nim->dv ;
    nim->dim[7] = nim->nw ; nim->pixdim[7] = nim->dw ;
 
-   nim->nvox = (size_t)nim->nx * nim->ny * nim->nz
-                     * nim->nt * nim->nu * nim->nv * nim->nw ;
+   for( ii=1, nim->nvox=1; ii <= 7; ii++ ){
+      if( nim->dim[ii] <= 0 || nim->nvox > SIZE_MAX / (size_t)nim->dim[ii] ){
+         if( g_opts.debug > 0 )
+            fprintf(stderr,"** NIFA: dim[] is not positive or overflows the voxel count\n");
+         nifti_image_free(nim); return NULL;
+      }
+      nim->nvox *= nim->dim[ii];
+   }
+   if( nim->nvox > SIZE_MAX / (size_t)nim->nbyper ){
+      if( g_opts.debug > 0 )
+         fprintf(stderr,"** NIFA: dim[] and datatype overflow the volume size\n");
+      nifti_image_free(nim); return NULL;
+   }
 
    if( nim->qform_code > 0 )
      nim->qto_xyz = nifti_quatern_to_mat44(
