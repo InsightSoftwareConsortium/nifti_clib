@@ -1,5 +1,9 @@
 /* popen()/pclose() in the PIGZ write path are POSIX, not ISO C11. */
+#ifdef PIGZ
+#ifdef HAVE_ZLIB
 #define _POSIX_C_SOURCE 200809L
+#endif
+#endif
 
 #define NIFTI1_IO_C
 
