@@ -1,4 +1,4 @@
-#include <nifti1_io.h>   /* directly include I/O library functions */
+#include "nifti1_io.h"   /* directly include I/O library functions */
 
 
 static int local_fileexists(const char* fname)

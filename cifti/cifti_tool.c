@@ -18,7 +18,7 @@
 #include <inttypes.h>
 
 #define USE_NIFTI2
-#include <nifti2_io.h>
+#include "nifti2_io.h"
 #include "afni_xml_io.h"
 
 static const char * g_history[] =

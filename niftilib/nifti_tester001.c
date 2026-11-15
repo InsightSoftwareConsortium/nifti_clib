@@ -2,7 +2,7 @@
  * test program for NIFTI lib.
  */
 #include <stdbool.h>
-#include <nifti1_io.h>
+#include "nifti1_io.h"
 
 static void PrintTest_eng(const int line,const char * message,const int FailureOccured, bool isFatal,int *ErrorAccum,bool verbose)
 {

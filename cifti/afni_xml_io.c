@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <nifti2_io.h>
+#include "nifti2_io.h"
 #include <inttypes.h>
 #include "afni_xml_io.h"
 

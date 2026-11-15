@@ -3,7 +3,7 @@
  * not working correctly, which left the copy of an image pointing to the same
  * extension list, which could cause all sorts of grief.
  */
-#include <nifti1_io.h>
+#include "nifti1_io.h"
 int main (int argc, const char *argv[])
 {
   if (argc > 1)

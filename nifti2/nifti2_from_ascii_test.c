@@ -1,6 +1,6 @@
 /* sscanf matches nothing here; run under memcheck to catch an uninitialized read */
 #include <stdio.h>
-#include <nifti2_io.h>
+#include "nifti2_io.h"
 
 int main(void)
 {
