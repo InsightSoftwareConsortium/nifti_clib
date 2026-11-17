@@ -160,6 +160,7 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
       add_test( NAME ${TEST_PREFIX}_newfiles_test      COMMAND sh ${NIFTI_TEST_SCRIPT_DIR}/newfiles_test.sh      $<TARGET_FILE:${TOOL_NAME}> ${fetch_testing_data_SOURCE_DIR}/nifti_regress_data )
 
       set_tests_properties(${TEST_PREFIX}_dci_test PROPERTIES LABELS NEEDS_DATA)
+      set_tests_properties(${TEST_PREFIX}_dsets_test PROPERTIES LABELS NEEDS_DATA)
       set_tests_properties(${TEST_PREFIX}_comment_test PROPERTIES LABELS NEEDS_DATA)
       set_tests_properties(${TEST_PREFIX}_newfiles_test PROPERTIES LABELS NEEDS_DATA)
 
