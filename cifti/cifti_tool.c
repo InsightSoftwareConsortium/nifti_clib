@@ -187,11 +187,15 @@ int process(opts_t * opts)
 
    if( ! ax ) {
       fprintf(stderr,"** failed to read CIFTI ext from %s\n", opts->fin);
+      nifti_image_free(nim);
       return 1;
    }
 
    if( opts->disp_cext ) disp_cifti_extension(nim, opts);
    if( opts->eval_cext ) eval_cifti_extension(ax, opts);
+
+   axml_free_xml_t(ax);
+   nifti_image_free(nim);
 
    return 0;
 }
