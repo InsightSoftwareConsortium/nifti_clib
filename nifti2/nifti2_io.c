@@ -474,6 +474,9 @@ static const nifti_type_ele nifti_type_list[] = {
     { 2304,     4,       0,   "NIFTI_TYPE_RGBA32"       },
 };
 
+/* also defined in libniftiio; both export it */
+int nifti_fileexists(const char* fname);
+
 /*---------------------------------------------------------------------------*/
 /* prototypes for internal functions - not part of exported library          */
 
@@ -7882,7 +7885,7 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 
 #ifdef PIGZ
 #ifdef HAVE_ZLIB
-int doPigz2(nifti_image *nim, struct nifti_2_header nhdr, const nifti_brick_list * NBL) {
+static int doPigz2(nifti_image *nim, struct nifti_2_header nhdr, const nifti_brick_list * NBL) {
 	FILE *pigzPipe;
 	char command[768];
     strcpy(command, "pigz" );
@@ -7914,7 +7917,7 @@ int doPigz2(nifti_image *nim, struct nifti_2_header nhdr, const nifti_brick_list
 	return 0;
 }
 
-int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
+static int doPigz(nifti_image *nim, struct nifti_1_header nhdr, const nifti_brick_list * NBL) {
 	FILE *pigzPipe;
 	char command[768];
     strcpy(command, "pigz" );

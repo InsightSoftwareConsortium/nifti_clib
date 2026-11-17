@@ -570,7 +570,7 @@ afni_xml_t * axml_recur_find_xml(int(*func)(afni_xml_t *, int), afni_xml_t * ax,
    /* search deeper */
    if( ax->nchild > 0 && ax->xchild )
       for( ind=0; ind < ax->nchild; ind++ ) {
-         rv = axml_recur_find_xml(func, ax, depth+1, max_depth);
+         rv = axml_recur_find_xml(func, ax->xchild[ind], depth+1, max_depth);
          if( rv ) return rv;
       }
 
