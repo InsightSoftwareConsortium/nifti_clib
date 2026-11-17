@@ -26,3 +26,10 @@ if(NIFTI_BUILD_APPLICATIONS)
   install_nifti_target(${NIFTI_PACKAGE_PREFIX}afni_xml_tool)
   install_nifti_target(${NIFTI_PACKAGE_PREFIX}cifti_tool)
 endif()
+
+if(NIFTI_BUILD_TESTING)
+  add_executable(${NIFTI_PACKAGE_PREFIX}test_axml_recur_find_xml test_axml_recur_find_xml.c)
+  target_link_libraries(${NIFTI_PACKAGE_PREFIX}test_axml_recur_find_xml PRIVATE ${NIFTI_CIFTILIB_NAME})
+  add_test(NAME ${NIFTI_PACKAGE_PREFIX}axml_recur_find_xml
+           COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}test_axml_recur_find_xml>)
+endif()
