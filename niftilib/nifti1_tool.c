@@ -702,7 +702,7 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
       return 1;
    }
    cp = opts->command + len;
-   remain -= len;
+   remain -= (size_t)len;
 
    /* get the rest, with special attention to input files */
    for( int ac = 1; ac < argc; ac++ )
@@ -727,7 +727,7 @@ int fill_cmd_string( nt_opts * opts, int argc, const char * argv[])
          fprintf(stderr,"FCS: error parsing command, continuing...\n");
          return 1;
       }
-      remain -= len;
+      remain -= (size_t)len;
 
       /* infiles is okay, but after the *next* argument, we may skip files */
       /* (danger, will robinson!  hack alert!) */
@@ -760,7 +760,7 @@ int add_int(int_list * ilist, int val)
 {
    if( ilist->len == 0 ) ilist->list = NULL;  /* just to be safe */
    ilist->len++;
-   ilist->list = (int *)realloc(ilist->list,ilist->len*sizeof(int));
+   ilist->list = (int *)realloc(ilist->list, (size_t)ilist->len * sizeof(int));
    if( ! ilist->list ){
       fprintf(stderr,"** failed to alloc %d (int *) elements\n",ilist->len);
       return -1;
@@ -781,7 +781,7 @@ int add_string(str_list * slist, const char * str)
 {
    if( slist->len == 0 ) slist->list = NULL;  /* just to be safe */
    slist->len++;
-   slist->list = (const char **)realloc(slist->list,slist->len*sizeof(char *));
+   slist->list = (const char **)realloc(slist->list, (size_t)slist->len * sizeof(char *));
    if( ! slist->list ){
       fprintf(stderr,"** failed to alloc %d (char *) elements\n",slist->len);
       return -1;
@@ -1936,14 +1936,14 @@ static char * read_file_text(const char * filename, int * length)
 
    /* allocate the bytes, and fill them with the file contents */
 
-   text = (char *)malloc(len * sizeof(char));
+   text = (char *)malloc((size_t)len * sizeof(char));
    if( !text ) {
       fprintf(stderr,"** RFT: failed to allocate %d bytes\n", len);
       fclose(fp);
       return NULL;
    }
 
-   bytes = fread(text, sizeof(char), len, fp);
+   bytes = fread(text, sizeof(char), (size_t)len, fp);
    fclose(fp); /* in any case */
 
    if( bytes != (size_t)len ) {
@@ -2141,7 +2141,7 @@ int remove_ext_list( nifti_image * nim, const char ** elist, int len )
    if( g_debug > 2 )
       fprintf(stderr,"+d removing %d exts from '%s'\n", len, nim->fname );
 
-   if( ! (marks = (int *)calloc(nim->num_ext, sizeof(int))) ) {
+   if( ! (marks = (int *)calloc((size_t)(nim->num_ext),sizeof(int))) ) {
       fprintf(stderr,"** failed to alloc %d marks\n",nim->num_ext);
       return -1;
    }
@@ -2990,8 +2990,7 @@ int modify_field(void * basep, size_t baselen, field_s * field, const char * dat
                   return 1;
                }
                /* otherwise, we're good */
-               { const int16_t sval = (int16_t)val;
-                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(sval), &sval,(size_t)sizeof(sval)); }
+               ((short *)((char *)basep + field->offset))[fc] = (short)val;
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3010,8 +3009,7 @@ int modify_field(void * basep, size_t baselen, field_s * field, const char * dat
                           fc,field->len);
                   return 1;
                }
-               { const int32_t ival = (int32_t)val;
-                  memcpy((char *)basep + field->offset + (size_t)fc * sizeof(ival), &ival,(size_t)sizeof(ival)); }
+               ((int *)((char *)basep + field->offset))[fc] = val;
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %d\n",
                           fc, field->name, val);
@@ -3031,7 +3029,7 @@ int modify_field(void * basep, size_t baselen, field_s * field, const char * dat
                   return 1;
                }
                /* otherwise, we're good */
-               memcpy((char *)basep + field->offset + (size_t)fc * sizeof(fval), &fval,(size_t)sizeof(fval));
+               ((float *)((char *)basep + field->offset))[fc] = fval;
                if( g_debug > 1 )
                   fprintf(stderr,"+d setting posn %d of '%s' to %f\n",
                           fc, field->name, fval);
@@ -3043,10 +3041,10 @@ int modify_field(void * basep, size_t baselen, field_s * field, const char * dat
          case NT_DT_STRING:
          {
             char * dest = (char *)basep + field->offset;
-            nchars = dataLength;
-            strncpy(dest, data, field->len);
+            nchars = (int)dataLength;
+            strncpy(dest, data, (size_t)(field->len));
             if( nchars < field->len )  /* clear the rest */
-               memset(dest+nchars, '\0', field->len-nchars);
+               memset(dest+nchars, '\0', (size_t)(field->len-nchars));
          }
          break;
    }
@@ -3490,7 +3488,7 @@ int disp_field( const char *mesg, field_s *fieldp, void * str, int nfields, int 
             int    len;
 
             /* start by sucking the pointer stored here */
-            memcpy(&sp, (const char *)str + fp->offset, sizeof(sp));
+            sp = *(char **)((char *)str + fp->offset);
 
             if( ! sp ){ fprintf(stdout,"(NULL)\n");  break; }  /* anything? */
 
@@ -3504,9 +3502,7 @@ int disp_field( const char *mesg, field_s *fieldp, void * str, int nfields, int 
             else if( *sp && !isprint(*sp) )  /* if no termination, it's bad */
                fprintf(stdout,"(non-printable string)\n");
             else  /* woohoo!  a good string */
-               { char * cp;
-                  memcpy(&cp, (const char *)str + fp->offset, sizeof(cp));
-                  fprintf(stdout,"'%.40s'\n", cp); }
+               fprintf(stdout,"'%.40s'\n",*(char **)((char *)str + fp->offset));
             break;
          }
 
@@ -3515,7 +3511,7 @@ int disp_field( const char *mesg, field_s *fieldp, void * str, int nfields, int 
             nifti1_extension * extp;
 
             /* yank the address sitting there into extp */
-            memcpy(&extp, (const char *)str + fp->offset, sizeof(extp));
+            extp = *(nifti1_extension **)((char *)str + fp->offset);
 
             /* the user may use -disp_exts to display all of them */
             if( extp ) disp_nifti1_extension(NULL, extp, 6);
@@ -3574,8 +3570,8 @@ int diff_field(field_s *fieldp, void * str0, void * str1, int nfields)
          {
             nifti1_extension * ext0, * ext1;
 
-            memcpy(&ext0, (const char *)str0 + fp->offset, sizeof(ext0));
-            memcpy(&ext1, (const char *)str1 + fp->offset, sizeof(ext1));
+            ext0 = *(nifti1_extension **)((char *)str0 + fp->offset);
+            ext1 = *(nifti1_extension **)((char *)str1 + fp->offset);
 
             if( ! ext0 && ! ext1 ) break;     /* continue on */
 
@@ -4284,8 +4280,9 @@ nifti_image * nt_read_bricks(nt_opts * opts, const char * fname, int len, int * 
 
     /* now populate NBL (can be based only on len and nim) */
     NBL->nbricks = len;
-    NBL->bsize = (size_t)nim->nbyper * nim->nx * nim->ny * nim->nz;
-    NBL->bricks = (void **)calloc(NBL->nbricks, sizeof(void *));
+    NBL->bsize = (size_t)nim->nbyper * (size_t)nim->nx
+                * (size_t)nim->ny * (size_t)nim->nz;
+    NBL->bricks = (void **)calloc((size_t)(NBL->nbricks), (size_t)(sizeof(void *)));
     if( !NBL->bricks ){
         fprintf(stderr,"** NRB: failed to alloc %d pointers\n",NBL->nbricks);
         nifti_image_free(nim);

@@ -40,6 +40,16 @@ if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
   add_executable(nifti_first_test_program nifti_tester001.c)
   target_link_libraries(nifti_first_test_program ${NIFTI_PACKAGE_PREFIX}niftiio )
 
+  add_executable(${NIFTI_PACKAGE_PREFIX}nifti_collapsed_overflow_test nifti_collapsed_overflow_test.c)
+  target_link_libraries(${NIFTI_PACKAGE_PREFIX}nifti_collapsed_overflow_test ${NIFTI_NIFTILIB_NAME})
+  add_test(
+    NAME ${NIFTI_PACKAGE_PREFIX}nifti_collapsed_overflow
+    COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti_collapsed_overflow_test>
+    )
+  set_tests_properties(${NIFTI_PACKAGE_PREFIX}nifti_collapsed_overflow PROPERTIES
+    PASS_REGULAR_EXPRESSION "too large for an int byte count"
+    FAIL_REGULAR_EXPRESSION "FAILURE|ERROR: (Address|Leak)Sanitizer|runtime error")
+
   add_executable(${NIFTI_PACKAGE_PREFIX}nifti_short_read_test nifti_short_read_test.c)
   target_link_libraries(${NIFTI_PACKAGE_PREFIX}nifti_short_read_test ${NIFTI_NIFTILIB_NAME})
   add_test(

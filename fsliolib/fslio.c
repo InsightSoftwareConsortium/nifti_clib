@@ -883,7 +883,7 @@ void FslWriteAllVolumes(FSLIO *fslio, const void *buffer)
 
   FslGetDim(fslio,&x,&y,&z,&t);
   FslWriteHeader(fslio);
-  FslWriteVolumes(fslio,buffer,t);
+  FslWriteVolumes(fslio,buffer, (size_t)t);
   return;
 }
 
@@ -932,7 +932,7 @@ size_t FslWriteVolumes(FSLIO *fslio, const void *buffer, size_t nvols)
       inbuf = buffer;
       tmpbuf = (char *)calloc(nbytes,1);
       FslGetDim(fslio,&nx,&ny,&nz,&nv);
-      nrows = nbytes / (nx * bpv);
+      nrows = (long int)(nbytes / ((size_t)nx * (size_t)bpv));
       for (n=0; n<nrows; n++) {
         for (x=0; x<nx; x++) {
           for (b=0; b<bpv; b++) {
@@ -1009,7 +1009,8 @@ void FslWriteHeader(FSLIO *fslio)
 size_t FslReadSliceSeries(FSLIO *fslio, void *buffer, short slice, size_t nvols)
 {
   size_t slbytes,volbytes;
-  size_t n, orig_offset;
+  size_t n;
+  znz_off_t orig_offset;
   short x,y,z,v,type;
 
   if (fslio==NULL)  FSLIOERR("FslReadSliceSeries: Null pointer passed for FSLIO");
@@ -1023,14 +1024,14 @@ size_t FslReadSliceSeries(FSLIO *fslio, void *buffer, short slice, size_t nvols)
     volbytes = slbytes * z;
 
     orig_offset = znztell(fslio->fileptr);
-    znzseek(fslio->fileptr, slbytes*slice, SEEK_CUR);
+    znzseek(fslio->fileptr, (znz_off_t)(slbytes*(size_t)slice), SEEK_CUR);
 
     for (n=0; n<nvols; n++) {
-      if (n>0) znzseek(fslio->fileptr, volbytes - slbytes, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - slbytes), SEEK_CUR);
       if (znzread((char *)buffer+n*slbytes, 1, slbytes, fslio->fileptr) != slbytes)
         FSLIOERR("FslReadSliceSeries: failed to read values");
      if (fslio->niftiptr->byteorder != nifti_short_order())
-        nifti_swap_Nbytes(slbytes / fslio->niftiptr->swapsize,
+        nifti_swap_Nbytes(slbytes / (size_t)fslio->niftiptr->swapsize,
                           fslio->niftiptr->swapsize, (char *)buffer+n*slbytes);
      }
 
@@ -1066,7 +1067,8 @@ size_t FslReadSliceSeries(FSLIO *fslio, void *buffer, short slice, size_t nvols)
 size_t FslReadRowSeries(FSLIO *fslio, void *buffer, short row, short slice, size_t nvols)
 {
   size_t rowbytes,slbytes,volbytes;
-  size_t n, orig_offset;
+  size_t n;
+  znz_off_t orig_offset;
   short x,y,z,v,type;
 
   if (fslio==NULL)  FSLIOERR("FslReadRowSeries: Null pointer passed for FSLIO");
@@ -1082,14 +1084,14 @@ size_t FslReadRowSeries(FSLIO *fslio, void *buffer, short row, short slice, size
     volbytes = slbytes * z;
 
     orig_offset = znztell(fslio->fileptr);
-    znzseek(fslio->fileptr, rowbytes*row + slbytes*slice, SEEK_CUR);
+    znzseek(fslio->fileptr, (znz_off_t)(rowbytes*(size_t)row + slbytes*(size_t)slice), SEEK_CUR);
 
     for (n=0; n<nvols; n++){
-      if (n>0) znzseek(fslio->fileptr, volbytes - rowbytes, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - rowbytes), SEEK_CUR);
       if (znzread((char *)buffer+n*rowbytes, 1, rowbytes, fslio->fileptr) != rowbytes)
         FSLIOERR("FslReadRowSeries: failed to read values");
       if (fslio->niftiptr->byteorder != nifti_short_order())
-        nifti_swap_Nbytes(rowbytes / fslio->niftiptr->swapsize,
+        nifti_swap_Nbytes(rowbytes / (size_t)fslio->niftiptr->swapsize,
                           fslio->niftiptr->swapsize, (char *)buffer+n*rowbytes);
     }
 
@@ -1125,7 +1127,8 @@ size_t FslReadRowSeries(FSLIO *fslio, void *buffer, short row, short slice, size
 size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, short zVox,
                          size_t nvols)
 {
-  size_t volbytes, offset, orig_offset;
+  size_t volbytes, offset;
+  znz_off_t orig_offset;
   size_t n;
   short xdim,ydim,zdim,v;
   size_t wordsize;
@@ -1144,10 +1147,10 @@ size_t FslReadTimeSeries(FSLIO *fslio, void *buffer, short xVox, short yVox, sho
 
     orig_offset = znztell(fslio->fileptr);
     offset = ((ydim * zVox + yVox) * xdim + xVox) * wordsize;
-    znzseek(fslio->fileptr,offset,SEEK_CUR);
+    znzseek(fslio->fileptr,(znz_off_t)offset,SEEK_CUR);
 
     for (n=0; n<nvols; n++) {
-      if (n>0) znzseek(fslio->fileptr, volbytes - wordsize, SEEK_CUR);
+      if (n>0) znzseek(fslio->fileptr, (znz_off_t)(volbytes - wordsize), SEEK_CUR);
       if (znzread((char *)buffer+(n*wordsize), 1, wordsize,fslio->fileptr) != wordsize)
         FSLIOERR("FslReadTimeSeries: failed to read values");
       if (fslio->niftiptr->byteorder != nifti_short_order())
@@ -1226,8 +1229,11 @@ void FslSetDim(FSLIO *fslio, short x, short y, short z, short v)
     fslio->niftiptr->dim[6] = fslio->niftiptr->nv;
     fslio->niftiptr->dim[7] = fslio->niftiptr->nw;
 
-    fslio->niftiptr->nvox =  fslio->niftiptr->nx * fslio->niftiptr->ny * fslio->niftiptr->nz
-      * fslio->niftiptr->nt * fslio->niftiptr->nu * fslio->niftiptr->nv * fslio->niftiptr->nw ;
+    fslio->niftiptr->nvox =
+        (size_t)fslio->niftiptr->nx * (size_t)fslio->niftiptr->ny
+      * (size_t)fslio->niftiptr->nz * (size_t)fslio->niftiptr->nt
+      * (size_t)fslio->niftiptr->nu * (size_t)fslio->niftiptr->nv
+      * (size_t)fslio->niftiptr->nw ;
 
   }
   if (fslio->mincptr!=NULL) {
@@ -1268,7 +1274,7 @@ void FslGetDimensionality(FSLIO *fslio, size_t *dim)
 {
   if (fslio==NULL)  FSLIOERR("FslGetDimensionality: Null pointer passed for FSLIO");
   if (fslio->niftiptr!=NULL) {
-    *dim = fslio->niftiptr->ndim;
+    *dim = (size_t)fslio->niftiptr->ndim;
   }
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
@@ -1476,7 +1482,7 @@ size_t FslGetDataType(FSLIO *fslio, short *t)
   if (fslio->mincptr!=NULL) {
     fprintf(stderr,"Warning:: Minc is not yet supported\n");
   }
-  return (size_t) 8 * nbytepix;
+  return (size_t) 8 * (size_t)nbytepix;
 }
 
 
@@ -2416,20 +2422,20 @@ double ****d4matrix(int th, int zh,  int yh, int xh)
 
 
         /** allocate pointers to vols */
-        t=(double ****) malloc((size_t)((nvol)*sizeof(double***)));
+        t=(double ****) malloc((size_t)nvol*sizeof(double***));
         if (!t) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers to slices */
-        t[0]=(double ***) malloc((size_t)((nvol*nslice)*sizeof(double**)));
+        t[0]=(double ***) malloc((size_t)nvol*(size_t)nslice*sizeof(double**));
         if (!t[0]) FSLIOERR("d4matrix: allocation failure");
 
         /** allocate pointers for ydim */
-        t[0][0]=(double **) malloc((size_t)((nvol*nslice*nrow)*sizeof(double*)));
+        t[0][0]=(double **) malloc((size_t)nvol*(size_t)nslice*(size_t)nrow*sizeof(double*));
         if (!t[0][0]) FSLIOERR("d4matrix: allocation failure");
 
 
         /** allocate the data blob */
-        t[0][0][0]=(double *) malloc((size_t)((nvol*nslice*nrow*ncol)*sizeof(double)));
+        t[0][0][0]=(double *) malloc((size_t)nvol*(size_t)nslice*(size_t)nrow*(size_t)ncol*sizeof(double));
         if (!t[0][0][0]) FSLIOERR("d4matrix: allocation failure");
 
 
