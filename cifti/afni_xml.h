@@ -88,6 +88,8 @@ int          axml_free_xlist(afni_xml_list * axlist);
 
 char * axml_attr_value(afni_xml_t * ax, const char * name);
 int    axml_recur(int(*func)(FILE*,afni_xml_t*,int), afni_xml_t * ax);
+afni_xml_t * axml_recur_find_xml(int (*func)(afni_xml_t *, int), afni_xml_t * ax,
+                                 int depth, int max_depth);
 
 
 /* control API */

@@ -267,8 +267,10 @@ endif()
   set(CTEST_CHECKOUT_COMMAND "\"${CMAKE_COMMAND}\" -P \"${ctest_checkout_script}\"")
   # CTest delayed initialization is broken, so we put the
   # CTestConfig.cmake info here.
-  set(CTEST_NIGHTLY_START_TIME "01:00:00 UTC")
-  set(CTEST_DROP_METHOD "http")
+  # Keep these in agreement with CTestConfig.cmake; a nightly start time
+  # that disagrees files builds under the wrong day on the dashboard.
+  set(CTEST_NIGHTLY_START_TIME "00:00:00 EST")
+  set(CTEST_DROP_METHOD "https")
   set(CTEST_DROP_SITE "my.cdash.org")
   set(CTEST_DROP_LOCATION "/submit.php?project=nifti_clib")
   set(CTEST_DROP_SITE_CDASH TRUE)
