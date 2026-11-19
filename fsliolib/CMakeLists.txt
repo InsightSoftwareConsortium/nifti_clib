@@ -24,4 +24,14 @@ if(NIFTI_BUILD_TESTING)
     NAME fslio_volsize_64bit
     COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}fslio_volsize_test>
     )
+
+  add_executable(${NIFTI_PACKAGE_PREFIX}fslio_seek_test fslio_seek_test.c)
+  target_link_libraries(${NIFTI_PACKAGE_PREFIX}fslio_seek_test PUBLIC ${NIFTI_FSLIOLIB_NAME})
+  add_test(
+    NAME fslio_seek_volume
+    COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}fslio_seek_test>
+    )
+  set_tests_properties(fslio_seek_volume PROPERTIES
+    ENVIRONMENT "FSLOUTPUTTYPE=NIFTI"
+    FAIL_REGULAR_EXPRESSION "ERROR: (Address|Leak)Sanitizer|runtime error")
 endif()
