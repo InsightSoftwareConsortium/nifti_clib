@@ -36,6 +36,15 @@ endif()
 
 
 if(NIFTI_BUILD_TESTING AND NIFTI_BUILD_APPLICATIONS)
+  if(FSLSTYLE_REJECT_COMPLEX)
+    add_executable(${NIFTI_PACKAGE_PREFIX}nifti2_reject_complex_test nifti2_reject_complex_test.c)
+    target_link_libraries(${NIFTI_PACKAGE_PREFIX}nifti2_reject_complex_test ${NIFTI_NIFTILIB2_NAME})
+    add_test(
+      NAME ${NIFTI_PACKAGE_PREFIX}nifti2_reject_complex
+      COMMAND $<TARGET_FILE:${NIFTI_PACKAGE_PREFIX}nifti2_reject_complex_test>
+      )
+  endif()
+
   # in order to decouble nifti2 and niftilib, the nifti1.h file
   # is duplicated here.  The verify_nifti1_headers_are_same test
   # will fail if these two files are not identical.
