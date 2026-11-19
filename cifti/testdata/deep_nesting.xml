@@ -1,0 +1,8 @@
+<CIFTI Version="2">
+  <Matrix>
+    <MatrixIndicesMap AppliesToMatrixDimension="0" IndicesMapToDataType="CIFTI_INDEX_TYPE_BRAIN_MODELS">
+      <BrainModel IndexOffset="0" IndexCount="1" ModelType="CIFTI_MODEL_TYPE_VOXELS"/>
+      <deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep><deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep></deep>
+    </MatrixIndicesMap>
+  </Matrix>
+</CIFTI>
