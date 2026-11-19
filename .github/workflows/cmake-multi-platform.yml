@@ -274,3 +274,19 @@ jobs:
       # A test that cannot find a DLL can raise a modal dialog and block the
       # runner rather than exit, so every test carries a timeout.
       run: ctest --build-config Release --output-on-failure --no-tests=ignore --timeout 120
+  workflow-triggers:
+    # A branch filter naming a branch that does not exist leaves the
+    # workflow configured but never scheduled, which is indistinguishable
+    # from one that runs and passes: no red check appears because no check
+    # appears at all. build.yml sat dead behind `branches: [ main ]` on a
+    # repository whose branch is master, and nothing detected it.
+    name: workflow triggers can match a branch
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y python3-yaml
+    - name: Check the branch filters
+      env:
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: python3 .github/check_workflow_triggers.py
